@@ -210,7 +210,7 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | `--language` | `en` | language hint. `en` = Roman/English output (default, best for Hinglish notes), `hi` = native Devanagari, `auto` = detect |
 | `--chunk-seconds` | `240` | ASR chunk size for the progress bar; `0` = single max-accuracy pass (mlx only; faster streams) |
 | **Enhance (C2)** | | |
-| `--enhance` | `none` | enhancer(s): `none`/`ffmpeg`/`deepfilternet`/`demucs`. Comma-separate to chain in order, e.g. `demucs,ffmpeg`. File-dependent — A/B per recording |
+| `--enhance` | `ffmpeg` | enhancer(s): `none`/`ffmpeg`/`deepfilternet`/`demucs`. Default `ffmpeg` = conservative DSP (safe for Whisper). Comma-chain in order, e.g. `demucs,ffmpeg`. `none` = raw |
 | `--denoise` | — | deprecated alias for `--enhance demucs` |
 | `--deepfilter-command` | `deepFilter` | DeepFilterNet CLI name |
 | **Diarization** | | |
@@ -374,8 +374,10 @@ silently overturn an L; the C axes are settled by evidence, not argument.
 notes quality**, tie-broken by coverage then speed (run `scripts/ab_test.py`).
 - **C1** ASR backend — `faster` (proven, portable, VAD) vs `mlx` (Metal-fast, but
   weaker on `hi`). Default `auto` (mlx then faster).
-- **C2** enhancer — `none` / `ffmpeg` / `deepfilternet` / `demucs`. **File-dependent**
-  (DeepFilterNet helped some files, looped on others), so it stays a flag.
+- **C2** enhancer — `none` / `ffmpeg` / `deepfilternet` / `demucs`, chainable
+  (`demucs,ffmpeg`). **Default `ffmpeg`**: conservative DSP (highpass/lowpass/
+  loudnorm) is low-risk and standard ASR prep. Aggressive denoise (DeepFilterNet)
+  and music source-separation (demucs) can *raise* Whisper WER — opt-in + A/B only.
 - **C3** language — `en` (Roman, easiest to summarize) vs `hi` (native Devanagari,
   Claude translates once at the end). **Default `en`** — the proven config; `hi`
   available for native-script transcripts.

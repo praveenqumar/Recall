@@ -39,10 +39,11 @@ def build_parser() -> argparse.ArgumentParser:
                         "max-accuracy pass (default: 240)")
 
     # --- enhancement (C2) ---
-    p.add_argument("--enhance", default="none",
+    p.add_argument("--enhance", default="ffmpeg",
                    help="audio enhancer(s): none | ffmpeg | deepfilternet | demucs. "
-                        "Comma-separate to chain in order, e.g. 'demucs,ffmpeg' "
-                        "(isolate vocals then DSP-clean). Default: none")
+                        "Default 'ffmpeg' = conservative DSP (highpass/lowpass/"
+                        "loudnorm), safe for Whisper. Comma-chain in order, e.g. "
+                        "'demucs,ffmpeg'. Use 'none' for raw audio")
     p.add_argument("--denoise", dest="enhance", action="store_const",
                    const="demucs",
                    help="deprecated alias for --enhance demucs")

@@ -1,10 +1,15 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=68", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# version (with the git commit) is derived at build time, so `recall --version`
+# tells you exactly which commit is installed. Falls back if built without git.
+fallback_version = "0.1.0"
 
 [project]
 name = "recall"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Offline, on-device Hinglish meeting transcription + AI notes, speaker identity, and personas."
 readme = "README.md"
 requires-python = ">=3.10"

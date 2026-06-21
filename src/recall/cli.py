@@ -13,10 +13,19 @@ from .common import log
 from .pipeline import run
 
 
+def _version() -> str:
+    try:
+        from importlib.metadata import version
+        return version("recall")        # includes the git commit (setuptools-scm)
+    except Exception:
+        return "unknown"
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="recall",
         description="Offline Hinglish meeting transcription + AI notes.")
+    p.add_argument("--version", action="version", version=f"recall {_version()}")
     p.add_argument("audio", help="input audio/video file (m4a, mp3, wav, mp4 ...)")
     p.add_argument("-o", "--output-dir", default="~/.recall",
                    help="output directory (default: ~/.recall)")

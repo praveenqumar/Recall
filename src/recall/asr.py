@@ -137,6 +137,16 @@ def _faster(wav: Path, language: Optional[str], chunk_s: float, model: str,
 
 _REGISTRY = {"mlx": _mlx, "faster": _faster}
 
+_PRIMER_NORM = HINGLISH_PRIMER.lower()
+
+
+def _drop_primer_echo(segs: list[Segment]) -> list[Segment]:
+    """Drop segments that are just the initial_prompt regurgitated — Whisper echoes
+    the primer on silence/low-confidence audio. A real utterance is never a
+    substring of our instruction text."""
+    return [s for s in segs
+            if not (len(s.text.strip()) > 10 and s.text.strip().lower() in _PRIMER_NORM)]
+
 
 def transcribe(backend: str, wav: Path, language: Optional[str], chunk_s: float,
                model: Optional[str], metrics: Metrics, progress: bool,
@@ -150,7 +160,8 @@ def transcribe(backend: str, wav: Path, language: Optional[str], chunk_s: float,
             die(f"unknown ASR backend: {name}")
         mdl = model or DEFAULT_MODEL[name]
         try:
-            segs = fn(wav, language, chunk_s, mdl, metrics, progress, work)
+            segs = _drop_primer_echo(
+                fn(wav, language, chunk_s, mdl, metrics, progress, work))
             log(f"ASR({name}): {len(segs)} segments")
             return segs
         except ImportError as e:

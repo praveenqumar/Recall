@@ -125,6 +125,15 @@ def test_compress_repeats():
         == "so we go and stop"
 
 
+def test_drop_primer_echo():
+    from recall.asr import _drop_primer_echo
+    segs = [Segment(0, 1, "real meeting content"),
+            Segment(1, 2, "Transcribe Hindi in Devanagari and keep English as English."),
+            Segment(2, 3, "another real line")]
+    out = _drop_primer_echo(segs)
+    assert [s.text for s in out] == ["real meeting content", "another real line"]
+
+
 def test_pmap_preserves_order():
     from recall.generate import pmap
     assert pmap([lambda i=i: i * 10 for i in range(5)]) == [0, 10, 20, 30, 40]

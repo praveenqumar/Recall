@@ -4,8 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scribe import identity  # noqa: E402
-from scribe.common import Segment  # noqa: E402
+from recall import identity  # noqa: E402
+from recall.common import Segment  # noqa: E402
 
 
 def test_cosine_and_norm():
@@ -67,7 +67,7 @@ def test_resolve_and_apply(tmp_path):
 
 
 def test_personastore(tmp_path):
-    from scribe.personas import PersonaStore
+    from recall.personas import PersonaStore
     ps = PersonaStore(tmp_path / "people")
     ps.add_utterances("Priya", "2026-06-21",
                       [{"start": 1.0, "end": 2.0, "text": "ship it"}])

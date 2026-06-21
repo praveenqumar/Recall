@@ -6,7 +6,7 @@
 > where the tracks genuinely contradict each other are **deferred to an A/B test**
 > on real recordings (`scripts/ab_test.py`), because only evidence can settle them.
 >
-> Written after studying: `files/HANDOFF.md`, `files/scribe.py`, `files/identity.py`,
+> Written after studying: `files/HANDOFF.md`, `files/recall.py`, `files/identity.py`,
 > `docs/transcription-pipeline-design.md`, `docs/requirements-solution-decisions.md`,
 > `scripts/transcribe_audio.py`, the committed transcripts, and `git log`.
 
@@ -14,7 +14,7 @@
 
 ## 1. The two tracks, side by side
 
-| Aspect | Track A — *built, run, committed* (`scripts/transcribe_audio.py`) | Track B — *spec + unrun code* (`files/scribe.py`, `files/identity.py`) |
+| Aspect | Track A — *built, run, committed* (`scripts/transcribe_audio.py`) | Track B — *spec + unrun code* (`files/recall.py`, `files/identity.py`) |
 |---|---|---|
 | ASR backend | `faster-whisper` (large-v3-turbo, CPU, int8) | `mlx-whisper` (large-v3-turbo, Metal/GPU) |
 | Enhancement | DeepFilterNet (default) + ffmpeg DSP fallback; VAD on | Demucs vocal isolation, **off by default**; no VAD |
@@ -25,7 +25,7 @@
 | Notes generation | none (separate manual summary) | `claude -p` primary, local MLX Qwen fallback |
 | Tailored reports | none | `--report-for NAME` |
 | Progress / metrics | nohup + log files | chunked ASR + tqdm bar + live RAM/CPU/GPU readout |
-| Persistent store | none (manual `meetings/` folders) | `scribe-data/` (voiceprints + people) |
+| Persistent store | none (manual `meetings/` folders) | `recall-data/` (voiceprints + people) |
 | Validation status | **proven** — generated every transcript here | **unrun** — HANDOFF §9 is an explicit "verify these calls" list |
 
 The tracks **only contradict each other on the first three rows**. Everything
@@ -40,7 +40,7 @@ These are settled now so the build can proceed in parallel with the A/B test.
 
 **L1 — Adopt Track B's superstructure wholesale.** Diarization, the
 voiceprint/identity layer, personas, `claude -p`→local-MLX notes, tailored
-reports, chunked progress with the live resource readout, and the `scribe-data/`
+reports, chunked progress with the live resource readout, and the `recall-data/`
 store are all net-new and uncontested. Track A has none of them; the requirements
 doc lists all of them as the intended roadmap. Keep `files/identity.py` essentially
 as-is (it is already unit-tested in the sandbox per HANDOFF §9).
@@ -119,7 +119,7 @@ This is the decision the user explicitly chose to settle by A/B.
 > **Decision rule.** For each contested axis, pick the variant with the better
 > Claude-judged **notes** quality, breaking ties by coverage then speed. Record the
 > winner per axis in the A/B report; it becomes the new default in the merged
-> `scribe.py` config. If results split by file type (likely for C2), keep the flag
+> `recall.py` config. If results split by file type (likely for C2), keep the flag
 > and document when to use which.
 
 ---
@@ -160,7 +160,7 @@ audio
 Two abstractions make L5 concrete:
 
 - `ASRBackend` — one method `transcribe(wav, language, chunk_s) -> list[Segment]`,
-  with `FasterWhisperBackend` and `MLXWhisperBackend` implementations. `scribe.py`
+  with `FasterWhisperBackend` and `MLXWhisperBackend` implementations. `recall.py`
   picks one via `--asr {faster,mlx,auto}`.
 - `Enhancer` — one method `process(in_wav) -> out_wav`, with `none`, `ffmpeg`,
   `deepfilternet`, `demucs` implementations, selected via `--enhance`.
@@ -188,11 +188,11 @@ backend throws, that axis is simply marked unavailable and the run continues).
 2. **A/B harness** (`scripts/ab_test.py`) — runs the contested matrix on a real
    recording, emits metrics + Claude-scored comparison. → user runs on the Mac.
 3. **Read the A/B report**, set the per-axis defaults.
-4. **Build merged `scribe.py`** around the two abstractions (§5), reusing
+4. **Build merged `recall.py`** around the two abstractions (§5), reusing
    `files/identity.py` and the Track B prompts, wiring in coverage diagnostics (L6).
 5. Validate the remaining §6 items end-to-end on one meeting; calibrate identity
    thresholds after enrolling a few real speakers.
-6. Then the roadmap items (`scribe people` management, `setup.sh`, `--batch`).
+6. Then the roadmap items (`recall people` management, `setup.sh`, `--batch`).
 
 **Guardrails to preserve throughout:** L2 (never require paid API), L3 (personas =
 evidence + hedge, data local), L4 (sequential stages / 18 GB), L5 (backends are

@@ -42,7 +42,7 @@ def run_module(mod):
         mp = None
         tmp = None
         if "tmp_path" in params:
-            tmp = Path(tempfile.mkdtemp(prefix="scribetest_"))
+            tmp = Path(tempfile.mkdtemp(prefix="recalltest_"))
             kwargs["tmp_path"] = tmp
         if "monkeypatch" in params:
             mp = MonkeyPatch()

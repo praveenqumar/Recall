@@ -8,7 +8,7 @@ recognized in every later recording. Everything runs locally except the final
 notes/personas/reports, which use your Claude subscription via `claude -p` with a
 local MLX fallback.
 
-> The CLI ships as the `scribe` package — run it with `python -m scribe`.
+> The CLI ships as the `recall` package — run it with `python -m recall`.
 
 ```
 audio ─► ingest ─► [enhance] ─► ASR ─► [diarize+identify] ─► [personas]
@@ -43,28 +43,28 @@ create a token, and `export HF_TOKEN=hf_xxx`.
 
 ```bash
 # typical: speaker labels on, Claude notes with local fallback
-python -m scribe ~/VoiceMemos/standup.m4a
+python -m recall ~/VoiceMemos/standup.m4a
 
 # pick the portable backend (works off Apple Silicon)
-python -m scribe meeting.m4a --asr faster
+python -m recall meeting.m4a --asr faster
 
 # try an enhancer (A/B it first — see docs/ab-runbook.md)
-python -m scribe meeting.m4a --enhance ffmpeg
+python -m recall meeting.m4a --enhance ffmpeg
 
 # fully offline notes / transcript only / no speaker labels
-python -m scribe meeting.m4a --notes-engine local
-python -m scribe meeting.m4a --notes-engine none
-python -m scribe meeting.m4a --no-diarize
+python -m recall meeting.m4a --notes-engine local
+python -m recall meeting.m4a --notes-engine none
+python -m recall meeting.m4a --no-diarize
 
 # later runs auto-recognise people; tailor reports to two of them
-python -m scribe team-sync.m4a --report-for "Priya" --report-for "Rahul"
+python -m recall team-sync.m4a --report-for "Priya" --report-for "Rahul"
 ```
 
-`python -m scribe --help` lists every flag.
+`python -m recall --help` lists every flag.
 
 ## Package layout (vertical slices)
 
-One capability per module under `scribe/`:
+One capability per module under `recall/`:
 
 | module | responsibility |
 |---|---|
@@ -79,15 +79,15 @@ One capability per module under `scribe/`:
 | `transcript` | assemble `.md`/`.json` + romanize + **coverage diagnostics** |
 | `notes` | meeting notes + per-person tailored reports |
 | `pipeline` | orchestration (wires the slices together, sequentially) |
-| `cli` | argument parsing / entry point (`python -m scribe`) |
+| `cli` | argument parsing / entry point (`python -m recall`) |
 
-Prompts live in `scribe/prompts/{notes,persona,report}.md`. Each slice owns its
+Prompts live in `recall/prompts/{notes,persona,report}.md`. Each slice owns its
 optional heavy dependency and degrades gracefully when it's missing, so the package
 imports cleanly even without the ML stack.
 
 ## Data
 
-Voiceprints + personas persist under `--data-dir` (default `./scribe-data/`):
+Voiceprints + personas persist under `--data-dir` (default `./recall-data/`):
 `voiceprints.json` and `people/<slug>/{profile.md, utterances.jsonl}`. This is
 biometric/personal data about colleagues — keep it local.
 
@@ -102,14 +102,14 @@ minutes, which this catches. (Design doc §4 / L6.)
 No pytest required:
 
 ```bash
-python tests/run.py        # 11 tests: identity logic + mocked end-to-end pipeline
+python tests/run.py        # 13 tests: identity logic + mocked end-to-end pipeline
 # or, if you have pytest:
 pytest tests/
 ```
 
 ## Repo map
 
-- `scribe/` — the package (this README)
+- `recall/` — the package (this README)
 - `scripts/ab_test.py` — A/B harness for the contested axes (run on the Mac)
 - `scripts/transcribe_audio.py` — original standalone faster-whisper script (legacy)
 - `docs/` — design, reconciliation, A/B runbook

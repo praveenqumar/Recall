@@ -1,4 +1,4 @@
-# meeting-scribe — merged dependencies.
+# Recall — merged dependencies.
 # The pipeline is backend-agnostic (design doc §5): install the ASR backend(s) you
 # want and the optional slices you use. Pure-Python slices (identity, personas,
 # transcript, coverage) need nothing beyond stdlib.

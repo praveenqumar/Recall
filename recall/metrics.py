@@ -1,5 +1,5 @@
 """
-scribe.metrics — sudo-free resource readout + live progress UX.
+recall.metrics — sudo-free resource readout + live progress UX.
 
 Metrics: a cheap snapshot of RAM / system-mem% / CPU% / MLX-Metal GPU memory.
 LiveStatus: a spinner + readout for stages with no natural progress %.
@@ -93,7 +93,7 @@ class LiveStatus:
             self._t = threading.Thread(target=self._run, daemon=True)
             self._t.start()
         else:
-            print(f"[scribe] {self.label} …", file=sys.stderr, flush=True)
+            print(f"[recall] {self.label} …", file=sys.stderr, flush=True)
         return self
 
     def _run(self) -> None:
@@ -118,4 +118,4 @@ class LiveStatus:
 
 
 def stage(n: int, total: int, name: str) -> None:
-    print(f"[scribe] [{n}/{total}] {name}", file=sys.stderr, flush=True)
+    print(f"[recall] [{n}/{total}] {name}", file=sys.stderr, flush=True)

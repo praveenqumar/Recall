@@ -1,7 +1,7 @@
 """
-scribe.cli — argument parsing and entry point.
+recall.cli — argument parsing and entry point.
 
-Run as:  python -m scribe AUDIO [options]
+Run as:  python -m recall AUDIO [options]
 """
 from __future__ import annotations
 
@@ -15,11 +15,11 @@ from .pipeline import run
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="scribe",
+        prog="recall",
         description="Offline Hinglish meeting transcription + AI notes.")
     p.add_argument("audio", help="input audio/video file (m4a, mp3, wav, mp4 ...)")
-    p.add_argument("-o", "--output-dir", default="./scribe-out",
-                   help="output directory (default: ./scribe-out)")
+    p.add_argument("-o", "--output-dir", default="./recall-out",
+                   help="output directory (default: ./recall-out)")
 
     # --- ASR (C1) ---
     p.add_argument("--asr", choices=["auto", "mlx", "faster"], default="auto",
@@ -70,9 +70,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- identity & personas ---
     ident = p.add_argument_group("speaker identity & personas")
-    ident.add_argument("--data-dir", default="./scribe-data",
+    ident.add_argument("--data-dir", default="./recall-data",
                        help="persistent store for voiceprints + personas "
-                            "(default: ./scribe-data)")
+                            "(default: ./recall-data)")
     ident.add_argument("--no-enroll", action="store_true",
                        help="don't prompt to name unknown speakers; only "
                             "auto-assign confident voiceprint matches")

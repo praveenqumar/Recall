@@ -1,5 +1,5 @@
 """
-scribe.generate — shared text-generation engine.
+recall.generate — shared text-generation engine.
 
 Claude (`claude -p`, on the Max subscription) is primary; a local MLX model
 (Qwen2.5-7B-4bit) is the offline fallback. make_generator() returns a single

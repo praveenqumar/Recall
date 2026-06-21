@@ -1,5 +1,5 @@
 """
-scribe.asr — C1 slice: pluggable ASR backends behind one interface.
+recall.asr — C1 slice: pluggable ASR backends behind one interface.
 
     transcribe(backend, wav, language, chunk_s, model, metrics, progress, work)
         -> list[Segment]

@@ -1,5 +1,5 @@
 """
-scribe.notes — meeting notes + per-person tailored reports.
+recall.notes — meeting notes + per-person tailored reports.
 
 write_notes()   transcript -> notes.md (via the shared generate engine).
 write_reports() for each --report-for NAME, a report whose FORMAT matches that

@@ -1,5 +1,5 @@
 """
-scribe.pipeline — orchestration. Wires the vertical slices together, sequentially,
+recall.pipeline — orchestration. Wires the vertical slices together, sequentially,
 to respect the ~18 GB unified-memory budget (Whisper, then pyannote, then the
 local LLM only if needed — never co-resident).
 
@@ -40,7 +40,7 @@ def run(cfg) -> None:
     n_stages = 7
     identified: list[str] = []
 
-    with tempfile.TemporaryDirectory(prefix="scribe_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="recall_") as tmp:
         work = Path(tmp)
 
         stage(1, n_stages, "Ingest")

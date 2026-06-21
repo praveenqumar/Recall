@@ -1,5 +1,5 @@
 """
-scribe.enhance — C2 slice: pluggable audio enhancement.
+recall.enhance — C2 slice: pluggable audio enhancement.
 
 One interface, four implementations, selected by name:
 

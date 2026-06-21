@@ -25,14 +25,14 @@ __pycache__/
 *.summary.md
 
 # Pipeline output dirs
-scribe-out/
-scribe-out-*/
+recall-out/
+recall-out-*/
 
 # Per-meeting archives (audio + summaries + metadata = meeting content/PII)
 meetings/
 
 # Biometric / personal: voiceprints + per-person personas — NEVER commit (D3/§8 privacy)
-scribe-data/
+recall-data/
 
 # Background-run logs / pids
 logs/

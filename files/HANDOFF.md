@@ -1,4 +1,4 @@
-# meeting-scribe — Project Handoff & Build Spec
+# Recall — Project Handoff & Build Spec
 
 > **Purpose of this document.** A complete, self-contained handoff so Claude
 > Cowork (or any agent/developer) can resume this project without re-reading the
@@ -56,7 +56,7 @@ fallback).
 | D8 | **Cross-session speaker identity** | Persistent **voiceprints** (pyannote embeddings) in a local store; cosine match; auto-assign ≥ `--id-high` (0.70), ask in [0.45, 0.70), treat < 0.45 as new. Interactive naming with `--no-enroll` for unattended runs. | Bootstraps identity from meetings; improves as samples accumulate; never silently guesses on weak matches. |
 | D9 | **Personas** | **ON by default** when identified people exist. Built from **raw** utterances (captured pre-romanization). Profile separates evidence-backed *observed patterns* from a hedged *tentative read* of tone. `--no-personas` to disable. | Inferring fixed traits from noisy ASR is unreliable; framed as a collaboration aid with provenance, not a character verdict. |
 | D10 | **Tailored reports** | `--report-for NAME` (repeatable) writes a report whose **format** matches that person's profile while **facts** stay strictly from the transcript. | Directly serves the "prepare a report in the format the person understands" requirement. |
-| D11 | **Persistence location** | `--data-dir` (default `./scribe-data/`): `voiceprints.json` + `people/<slug>/{profile.md, utterances.jsonl}`. | Plain JSON/JSONL/Markdown — inspectable and hand-editable. |
+| D11 | **Persistence location** | `--data-dir` (default `./recall-data/`): `voiceprints.json` + `people/<slug>/{profile.md, utterances.jsonl}`. | Plain JSON/JSONL/Markdown — inspectable and hand-editable. |
 
 ---
 
@@ -114,8 +114,8 @@ LLM resident simultaneously.
 ## 5. Repository layout
 
 ```
-meeting-scribe/
-├── scribe.py            # main CLI orchestrator (~750 lines)
+Recall/
+├── recall.py            # main CLI orchestrator (~750 lines)
 ├── identity.py          # VoiceStore + PersonaStore + cosine/match (~176 lines, pure python)
 ├── requirements.txt     # core: mlx-whisper, mlx-lm, tqdm, psutil, pyannote.audio
 ├── README.md            # user-facing setup + usage
@@ -126,7 +126,7 @@ meeting-scribe/
     └── report.md        # per-person tailored-report instruction
 ```
 
-### Key functions in `scribe.py`
+### Key functions in `recall.py`
 - `ingest`, `denoise`, `wav_duration`, `_slice_wav` — audio prep + chunking.
 - `transcribe` — chunked ASR with tqdm bar + timestamp stitching (`_segs_from`).
 - `diarize` — returns `(turns, emb_map)`; `assign_speakers` — overlap-based labelling.
@@ -149,7 +149,7 @@ meeting-scribe/
 ## 6. Data model
 
 ```
-scribe-data/
+recall-data/
 ├── voiceprints.json
 │     {
 │       "version": 1,
@@ -174,13 +174,13 @@ scribe-data/
 ## 7. CLI reference
 
 ```
-python scribe.py AUDIO [options]
+python recall.py AUDIO [options]
 ```
 
 | Flag | Default | Purpose |
 |------|---------|---------|
 | `AUDIO` | — | input audio/video file |
-| `-o, --output-dir` | `./scribe-out` | where transcript/notes/reports go |
+| `-o, --output-dir` | `./recall-out` | where transcript/notes/reports go |
 | `--model` | `mlx-community/whisper-large-v3-turbo` | ASR model |
 | `--language` | `hi` | ASR language hint; `auto` to detect |
 | `--chunk-seconds` | `240` | ASR chunk size for progress; `0` = single pass |
@@ -192,7 +192,7 @@ python scribe.py AUDIO [options]
 | `--local-model` | `mlx-community/Qwen2.5-7B-Instruct-4bit` | offline notes model |
 | `--notes-prompt` | `prompts/notes.md` | notes instruction file |
 | `--no-progress` | off | disable bars/metrics (for scripts/cron) |
-| `--data-dir` | `./scribe-data` | voiceprint + persona store |
+| `--data-dir` | `./recall-data` | voiceprint + persona store |
 | `--no-enroll` | off | unattended: auto-assign only, no naming prompts |
 | `--id-high` | `0.70` | cosine ≥ → auto-assign known speaker |
 | `--id-low` | `0.45` | cosine in [low, high) → ask user |
@@ -205,16 +205,16 @@ python scribe.py AUDIO [options]
 ```bash
 # typical: labels on, Claude notes + local fallback
 export HF_TOKEN=hf_xxx
-python scribe.py ~/VoiceMemos/standup.m4a
+python recall.py ~/VoiceMemos/standup.m4a
 
 # later run: auto-recognize people + tailor two reports
-python scribe.py standup.m4a --report-for "Priya" --report-for "Rahul"
+python recall.py standup.m4a --report-for "Priya" --report-for "Rahul"
 
 # fully offline notes
-python scribe.py call.m4a --notes-engine local
+python recall.py call.m4a --notes-engine local
 
 # unattended (no prompts), no personas
-python scribe.py call.m4a --no-enroll --no-personas
+python recall.py call.m4a --no-enroll --no-personas
 ```
 
 ---
@@ -312,7 +312,7 @@ offline.
 Priority order for resuming:
 
 1. **Validate §9** on a real recording (blocking everything else).
-2. **`scribe people` management command** — list / show / rename / merge / delete
+2. **`recall people` management command** — list / show / rename / merge / delete
    stored identities and view profiles. (First thing needed once the store has
    real people; merging matters because the same person may get enrolled twice
    before recognition stabilizes.)
@@ -333,12 +333,12 @@ Priority order for resuming:
 
 ## 12. How to resume in Claude Cowork
 
-1. Open the `meeting-scribe/` folder in Cowork.
-2. Read this `HANDOFF.md`, then `README.md`, then skim `scribe.py` + `identity.py`.
+1. Open the `Recall/` folder in Cowork.
+2. Read this `HANDOFF.md`, then `README.md`, then skim `recall.py` + `identity.py`.
 3. Run the **§9 validation checklist** against one real meeting recording; patch
    any drifted library call (paste tracebacks to Claude Code for one-line fixes).
 4. Calibrate identity thresholds after enrolling a few real speakers.
-5. Then build **`scribe people`** (#2) and **`setup.sh`** (#3) from §11.
+5. Then build **`recall people`** (#2) and **`setup.sh`** (#3) from §11.
 
 **Guardrails to preserve when extending:**
 - Keep the Claude-primary / local-fallback engine split (D5) and never require

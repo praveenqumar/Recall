@@ -1,5 +1,5 @@
 """
-scribe.transcript — assemble outputs + coverage diagnostics.
+recall.transcript — assemble outputs + coverage diagnostics.
 
 build_transcript()  -> (markdown, json_dict): timestamped, speaker-labelled.
 romanize()           -> optional Devanagari -> ITRANS transliteration.

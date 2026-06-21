@@ -1,5 +1,5 @@
 """
-scribe.common — shared primitives used across every slice.
+recall.common — shared primitives used across every slice.
 
 Kept dependency-free (stdlib only) so it imports cleanly anywhere, including in
 tests that never touch the ML backends.
@@ -19,7 +19,7 @@ from typing import Optional
 # logging — everything to stderr so stdout stays clean for piping
 # --------------------------------------------------------------------------- #
 def log(msg: str) -> None:
-    print(f"[scribe] {msg}", file=sys.stderr, flush=True)
+    print(f"[recall] {msg}", file=sys.stderr, flush=True)
 
 
 def die(msg: str, code: int = 1) -> None:

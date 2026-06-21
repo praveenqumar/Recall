@@ -10,11 +10,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scribe import asr, diarize, notes as notes_mod, transcript as tx  # noqa: E402
-from scribe.cli import build_parser  # noqa: E402
-from scribe.common import Segment  # noqa: E402
-from scribe.personas import PersonaStore  # noqa: E402
-from scribe.pipeline import run  # noqa: E402
+from recall import asr, diarize, notes as notes_mod, transcript as tx  # noqa: E402
+from recall.cli import build_parser  # noqa: E402
+from recall.common import Segment  # noqa: E402
+from recall.personas import PersonaStore  # noqa: E402
+from recall.pipeline import run  # noqa: E402
 
 
 def _make_wav(path: Path, seconds: int = 4) -> None:

@@ -10,9 +10,9 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from scribe import diarize as diar, identity  # noqa: E402
-from scribe.common import ingest  # noqa: E402
-from scribe.metrics import Metrics  # noqa: E402
+from recall import diarize as diar, identity  # noqa: E402
+from recall.common import ingest  # noqa: E402
+from recall.metrics import Metrics  # noqa: E402
 import os  # noqa: E402
 
 
@@ -25,7 +25,7 @@ def main() -> None:
             wav, os.environ.get("HF_TOKEN"), Metrics(), progress=False)
     if not emb_map:
         sys.exit("no embeddings — diarization failed")
-    vstore = identity.VoiceStore(Path("./scribe-data/voiceprints.json"))
+    vstore = identity.VoiceStore(Path("./recall-data/voiceprints.json"))
     for label, name in zip(sorted(emb_map), names):
         vstore.enroll(name, emb_map[label])
         print(f"enrolled {label} -> {name}")

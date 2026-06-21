@@ -1,5 +1,5 @@
 """
-scribe.personas — per-person living collaboration profiles.
+recall.personas — per-person living collaboration profiles.
 
 PersonaStore keeps, per person, an append-only raw-utterance log and a Markdown
 profile.md that an LLM folds new meetings into over time. build_personas() runs

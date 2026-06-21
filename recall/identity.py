@@ -1,5 +1,5 @@
 """
-scribe.identity — persistent cross-session speaker identity.
+recall.identity — persistent cross-session speaker identity.
 
 VoiceStore: name -> running-average voiceprint; match() classifies a new speaker
 embedding as match / ambiguous / unknown by cosine. resolve_identities() turns

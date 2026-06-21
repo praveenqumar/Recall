@@ -1,5 +1,5 @@
 """
-scribe.diarize — speaker diarization slice (pyannote 3.1).
+recall.diarize — speaker diarization slice (pyannote 3.1).
 
 diarize()        -> (turns, emb_map): who-spoke-when + one voiceprint per speaker.
 assign_speakers() -> stamps each Segment with its best-overlap speaker label.

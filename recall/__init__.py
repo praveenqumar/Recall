@@ -1,5 +1,5 @@
 """
-meeting-scribe — offline, on-device Hinglish meeting transcription + notes.
+Recall — offline, on-device Hinglish meeting transcription + notes.
 
 Organized as vertical slices, one capability per module:
 

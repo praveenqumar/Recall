@@ -7,7 +7,7 @@ choices in `docs/reconciliation-and-merged-design.md` into defaults.
 ## 0. One-time setup
 
 ```bash
-cd meeting-scribe
+cd Recall
 source .venv-transcribe/bin/activate          # the env that already runs faster-whisper
 
 # to also test the mlx backend (Track B's premise — currently unproven):
@@ -81,5 +81,5 @@ python scripts/ab_test.py another_meeting.m4a --judge
 ## 5. Hand the results back
 
 Drop `ab-out/ab_report.md` (and any mlx tracebacks) back into Cowork. With the
-per-axis winners decided, the next step is building the merged `scribe.py` around the
+per-axis winners decided, the next step is building the merged `recall.py` around the
 `ASRBackend` / `Enhancer` abstractions in design-doc §5, with the winners as defaults.

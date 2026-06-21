@@ -281,7 +281,7 @@ def write_report(audio_in: Path, minutes: float, duration: float,
         "Claude-judged notes usability; break ties by coverage, then RTF. If "
         "enhancers split by file (likely), keep the flag and note which file types "
         "favour which. Record the chosen per-axis defaults back into the merged "
-        "`scribe.py` config.", "",
+        "`recall.py` config.", "",
         "## Per-variant transcripts", "",
     ]
     for v in variants:

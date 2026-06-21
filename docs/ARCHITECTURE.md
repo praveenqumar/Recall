@@ -1,7 +1,7 @@
 # Recall — Architecture & Developer/Agent Guide
 
 > Canonical reference for **using**, **operating**, and **extending** Recall (the
-> `scribe` package).
+> `recall` package).
 > If you are an agent picking this repo up cold: read this file top-to-bottom, then
 > [`files/HANDOFF.md`](../files/HANDOFF.md) (original contract) and
 > [`docs/reconciliation-and-merged-design.md`](reconciliation-and-merged-design.md)
@@ -85,8 +85,8 @@ flowchart TD
     end
 
     %% persistence
-    Fa -.persist.-> V[(scribe-data/<br/>voiceprints.json)]
-    G  -.persist.-> P[(scribe-data/people/&lt;slug&gt;/<br/>profile.md + utterances.jsonl)]
+    Fa -.persist.-> V[(recall-data/<br/>voiceprints.json)]
+    G  -.persist.-> P[(recall-data/people/&lt;slug&gt;/<br/>profile.md + utterances.jsonl)]
 ```
 
 **The one data type that flows through everything:** `Segment(start, end, text,
@@ -159,31 +159,31 @@ First run downloads model weights into the HF cache; subsequent runs are offline
 
 ```bash
 # typical: speaker labels on, Claude notes with local fallback
-python -m scribe ~/VoiceMemos/standup.m4a
+python -m recall ~/VoiceMemos/standup.m4a
 
 # proven config on real Hinglish meeting audio (recommended defaults today)
-python -m scribe meeting.m4a --asr faster --language en
+python -m recall meeting.m4a --asr faster --language en
 
 # later runs auto-recognize people; tailor reports to two of them
-python -m scribe team-sync.m4a --report-for "Priya" --report-for "Rahul"
+python -m recall team-sync.m4a --report-for "Priya" --report-for "Rahul"
 
 # fully offline (no Claude): local MLX notes
-python -m scribe call.m4a --notes-engine local
+python -m recall call.m4a --notes-engine local
 
 # transcript only / no speaker labels
-python -m scribe call.m4a --notes-engine none
-python -m scribe call.m4a --no-diarize
+python -m recall call.m4a --notes-engine none
+python -m recall call.m4a --no-diarize
 
-python -m scribe --help        # every flag
+python -m recall --help        # every flag
 ```
 
-**Outputs** land in `--output-dir` (default `./scribe-out`):
+**Outputs** land in `--output-dir` (default `./recall-out`):
 `<stem>.transcript.md`, `<stem>.transcript.json`, `<stem>.notes.md`, and
 `<stem>.report.<slug>.md` per `--report-for`.
 
 **Operating long jobs** (a 50-min recording is ~10–20 min on CPU ASR): run in the
 background and tail the log, e.g.
-`nohup python -m scribe big.m4a ... > logs/run.log 2>&1 &`. Do not run two heavy
+`nohup python -m recall big.m4a ... > logs/run.log 2>&1 &`. Do not run two heavy
 ASR jobs concurrently — they thrash CPU and risk the memory budget.
 
 ---
@@ -193,7 +193,7 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | Flag | Default | Purpose |
 |---|---|---|
 | `AUDIO` | — | input audio/video file (m4a/mp3/wav/mp4…) |
-| `-o, --output-dir` | `./scribe-out` | where transcript/notes/reports are written |
+| `-o, --output-dir` | `./recall-out` | where transcript/notes/reports are written |
 | **ASR (C1)** | | |
 | `--asr {auto,mlx,faster}` | `auto` | backend. `auto` = try mlx then faster. `faster` is the proven path; `mlx` is fastest on Apple Silicon but weaker on `hi` |
 | `--model` | backend turbo | ASR model id (`large-v3` for max accuracy/slower) |
@@ -207,7 +207,7 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | `--diarize` / `--no-diarize` | on | speaker labels via pyannote |
 | `--hf-token` | env `HF_TOKEN` | pyannote auth (gated models) |
 | **Identity & personas** | | |
-| `--data-dir` | `./scribe-data` | persistent voiceprint + persona store |
+| `--data-dir` | `./recall-data` | persistent voiceprint + persona store |
 | `--no-enroll` | off | unattended: auto-assign confident matches only, never prompt for names |
 | `--id-high` | `0.70` | cosine ≥ this → auto-assign a known speaker |
 | `--id-low` | `0.45` | cosine in `[id-low, id-high)` → ambiguous, ask the human |
@@ -226,35 +226,35 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 
 ## 7. Programmatic / internal API surface
 
-scribe is a CLI, not a network service — **it exposes no HTTP/socket API and binds
+recall is a CLI, not a network service — **it exposes no HTTP/socket API and binds
 no port**. Its "API" is the Python package. Stable entry points:
 
 | Symbol | Signature (abbrev.) | Role |
 |---|---|---|
-| `scribe.cli.main(argv=None)` | → None | parse args + run; `python -m scribe` calls this |
-| `scribe.pipeline.run(cfg)` | `cfg: argparse.Namespace` → None | the whole orchestration; pass a config object with the CLI attributes |
-| `scribe.asr.transcribe(backend, wav, language, chunk_s, model, metrics, progress, work)` | → `list[Segment]` | **C1 dispatch**; add a backend in `_REGISTRY` |
-| `scribe.enhance.enhance(name, wav, work, metrics, progress, df_cmd)` | → `Path` | **C2 dispatch**; add an enhancer in `_REGISTRY` |
-| `scribe.diarize.diarize(wav, hf_token, metrics, progress)` | → `(turns, emb_map)` | who-spoke-when + voiceprints |
-| `scribe.diarize.assign_speakers(segs, turns)` | mutates segs | overlap-based label stamping |
-| `scribe.identity.VoiceStore` | `match()/enroll()/save()/names()` | persistent voiceprints, cosine match |
-| `scribe.identity.resolve_identities(segs, emb_map, vstore, id_high, id_low, enroll)` | → `{label: name}` | label → real name |
-| `scribe.personas.PersonaStore` | `add_utterances/read_profile/update_profile…` | living profiles |
-| `scribe.generate.make_generator(engine, local_model, metrics, progress)` | → `generate(instructions, content, label)` | shared Claude→local text engine (used by notes/personas/reports) |
-| `scribe.transcript.coverage(segs, duration, …)` | → dict | coverage + hallucination diagnostics (**L6**) |
-| `scribe.transcript.build_transcript(segs, title, cov)` | → `(md, json)` | assemble outputs |
-| `scribe.common.Segment` | dataclass | the unit every stage consumes |
+| `recall.cli.main(argv=None)` | → None | parse args + run; `python -m recall` calls this |
+| `recall.pipeline.run(cfg)` | `cfg: argparse.Namespace` → None | the whole orchestration; pass a config object with the CLI attributes |
+| `recall.asr.transcribe(backend, wav, language, chunk_s, model, metrics, progress, work)` | → `list[Segment]` | **C1 dispatch**; add a backend in `_REGISTRY` |
+| `recall.enhance.enhance(name, wav, work, metrics, progress, df_cmd)` | → `Path` | **C2 dispatch**; add an enhancer in `_REGISTRY` |
+| `recall.diarize.diarize(wav, hf_token, metrics, progress)` | → `(turns, emb_map)` | who-spoke-when + voiceprints |
+| `recall.diarize.assign_speakers(segs, turns)` | mutates segs | overlap-based label stamping |
+| `recall.identity.VoiceStore` | `match()/enroll()/save()/names()` | persistent voiceprints, cosine match |
+| `recall.identity.resolve_identities(segs, emb_map, vstore, id_high, id_low, enroll)` | → `{label: name}` | label → real name |
+| `recall.personas.PersonaStore` | `add_utterances/read_profile/update_profile…` | living profiles |
+| `recall.generate.make_generator(engine, local_model, metrics, progress)` | → `generate(instructions, content, label)` | shared Claude→local text engine (used by notes/personas/reports) |
+| `recall.transcript.coverage(segs, duration, …)` | → dict | coverage + hallucination diagnostics (**L6**) |
+| `recall.transcript.build_transcript(segs, title, cov)` | → `(md, json)` | assemble outputs |
+| `recall.common.Segment` | dataclass | the unit every stage consumes |
 
 **On-disk data contract** (`--data-dir`, biometric — keep local):
 ```
-scribe-data/
+recall-data/
 ├── voiceprints.json          {version, people:{<name>:{centroid[256], n_samples, dim, updated}}}
 └── people/<slug>/
     ├── profile.md            living collaboration profile (LLM-maintained, hand-editable)
     └── utterances.jsonl      {date,start,end,text} append-only, raw (pre-romanization)
 ```
 
-**Prompts** are plain Markdown in `scribe/prompts/{notes,persona,report}.md` —
+**Prompts** are plain Markdown in `recall/prompts/{notes,persona,report}.md` —
 editable without touching code; override per-run with `--*-prompt`.
 
 ---
@@ -294,7 +294,7 @@ minimal; don't reformat unrelated code.
 ### 8.3 How to fix a bug / debug
 - Reproduce with `--no-progress` first (removes the live readout from the picture).
 - Logs go to **stderr** (`common.log`); stdout stays clean for piping. Real
-  failures are logged as `[scribe] ... ` lines; ASR/enhancer/diarize failures fall
+  failures are logged as `[recall] ... ` lines; ASR/enhancer/diarize failures fall
   back rather than crash, so **read the warnings**, not just the exit code.
 - Library API drift is the most common breakage (this stack moves fast). Three real
   examples already fixed, all one-liners, all in
@@ -312,7 +312,7 @@ minimal; don't reformat unrelated code.
   surface); don't auto-execute anything from them.
 - **No secrets in code.** The only credential is `HF_TOKEN`, read from the
   environment or `--hf-token` — never hard-code it.
-- **Biometric data stays local.** `scribe-data/` (voiceprints + personas) and all
+- **Biometric data stays local.** `recall-data/` (voiceprints + personas) and all
   audio/transcripts/notes are git-ignored by default; keep them that way. Don't
   commit real names, recordings, or meeting content to a shared repo.
 
@@ -342,6 +342,6 @@ diarization so it runs anywhere (only ffmpeg required).
   speakers; revisit once the store has many people.
 - Interactive enrollment requires a TTY; for unattended runs use `--no-enroll` or
   pre-seed with `scripts/seed_voiceprints.py`.
-- Not yet built (see HANDOFF §11): `scribe people` management command, `setup.sh`,
+- Not yet built (see HANDOFF §11): `recall people` management command, `setup.sh`,
   `--batch` folder mode, threshold auto-calibration, non-destructive VAD,
   cross-meeting rollups.

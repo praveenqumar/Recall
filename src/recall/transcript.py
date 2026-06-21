@@ -10,24 +10,48 @@ coverage()           -> the silent-gap diagnostic (design doc L6 / §4): both
 """
 from __future__ import annotations
 
-import re
 from collections import Counter
 from dataclasses import asdict
 
 from .common import Segment, fmt_ts, log
 
-# immediate same-word run: "that that that" -> "that", "है है है" -> "है"
-_WORD_RUN = re.compile(r"\b(\w+)(?:\s+\1\b)+", re.IGNORECASE | re.UNICODE)
+
+def _collapse_loops(text: str, max_period: int = 6, min_repeats: int = 3) -> str:
+    """Collapse a consecutively-repeated word OR phrase to a single copy:
+    'go and go and go and' -> 'go and', 'seal seal seal' -> 'seal'. Token-based
+    (no regex backtracking); only collapses runs of >= min_repeats."""
+    words = text.split()
+    out: list[str] = []
+    i, n = 0, len(words)
+    while i < n:
+        hit = False
+        for p in range(1, max_period + 1):           # try shortest period first
+            if i + p * min_repeats > n:
+                continue
+            unit = words[i:i + p]
+            reps, j = 1, i + p
+            while j + p <= n and words[j:j + p] == unit:
+                reps += 1
+                j += p
+            if reps >= min_repeats:
+                out.extend(unit)                     # keep one copy of the unit
+                i = j
+                hit = True
+                break
+        if not hit:
+            out.append(words[i])
+            i += 1
+    return " ".join(out)
 
 
 def compress_repeats(segs: list[Segment]) -> list[Segment]:
     """Strip Whisper hallucination repetition before the LLM sees it: collapse
-    immediate same-word runs inside each segment, then merge consecutive segments
+    repeated word/phrase loops inside each segment, then merge consecutive segments
     with identical text into one (extending its end). Cuts tokens fed to Claude
     without losing real content; near-no-op on clean transcripts."""
     out: list[Segment] = []
     for s in segs:
-        s.text = _WORD_RUN.sub(r"\1", s.text)
+        s.text = _collapse_loops(s.text)
         if out and out[-1].text.strip().lower() == s.text.strip().lower():
             out[-1].end = s.end          # absorb the duplicate run
         else:

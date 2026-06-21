@@ -116,9 +116,13 @@ def test_compress_repeats():
     out = tx.compress_repeats(segs)
     assert [s.text for s in out] == ["hello", "झाल झाल", "bye"]  # looped segs -> 1
     assert out[1].end == 4.0                                      # end extended over run
-    # within-segment word run
+    # within-segment single-word run
     assert tx.compress_repeats([Segment(0, 1, "that that that is good")])[0].text \
         == "that is good"
+    # within-segment PHRASE loop (period 2)
+    assert tx.compress_repeats(
+        [Segment(0, 1, "so we go and go and go and go and stop")])[0].text \
+        == "so we go and stop"
 
 
 def test_pmap_preserves_order():

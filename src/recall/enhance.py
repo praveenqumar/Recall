@@ -22,9 +22,13 @@ from typing import Callable
 from .common import have, log, run_ffmpeg
 from .metrics import LiveStatus, Metrics
 
-# filters carried over from the proven Track A pipeline
-FFMPEG_DSP = "highpass=f=80,lowpass=f=8000,afftdn=nf=-25,loudnorm=I=-18:TP=-1.5:LRA=11"
-FFMPEG_POST_AI = "highpass=f=80,lowpass=f=8000,loudnorm=I=-18:TP=-1.5:LRA=11"
+# filters carried over from the proven Track A pipeline.
+# lowpass at 7500 (NOT 8000): the pipeline applies these to the 16 kHz ingest wav,
+# where 8000 Hz is exactly Nyquist — a lowpass there is a degenerate biquad that,
+# combined with afftdn, wipes the speech and yields 0 ASR segments. 7500 sits just
+# below Nyquist and keeps the speech band.
+FFMPEG_DSP = "highpass=f=80,lowpass=f=7500,afftdn=nf=-25,loudnorm=I=-18:TP=-1.5:LRA=11"
+FFMPEG_POST_AI = "highpass=f=80,lowpass=f=7500,loudnorm=I=-18:TP=-1.5:LRA=11"
 
 NAMES = ("none", "ffmpeg", "deepfilternet", "demucs")
 

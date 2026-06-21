@@ -42,9 +42,10 @@ npm install -g @anthropic-ai/claude-code   # for `claude -p`; log in once
 Extras: `mlx` (Apple-Silicon ASR + offline notes), `faster` (portable CPU ASR),
 `diarize` (speaker labels), `demucs`/`deepfilternet` (enhancers), `romanize`,
 `all`. `all` excludes `deepfilternet` — its native lib (`deepfilterlib`) ships no
-prebuilt wheel and **compiles from source via Rust/cargo**. To use it: install a
-Rust toolchain first (`brew install rust`), then `recall[deepfilternet]`. The core
-install needs
+prebuilt wheel. To use the DeepFilterNet enhancer, either grab the prebuilt
+`deep-filter` binary from its [releases](https://github.com/Rikorose/DeepFilterNet/releases)
+(no Rust — `recall … --enhance deepfilternet --deepfilter-command ./deep-filter`),
+or `brew install rust` then `recall[deepfilternet]`. The core install needs
 only stdlib + tqdm/psutil. (`requirements.txt` mirrors `all` if you prefer
 `pip install -r requirements.txt`.) On `uv`, use
 `uv pip install -e '.[all]'` into `.venv-transcribe`.

@@ -129,8 +129,13 @@ transcript; Claude (or Qwen) does translation *and* notes in one pass.
   artifacts and is slow (minutes/run); it helps only genuinely music/noise-saturated
   recordings. Opt-in, A/B first.
 - **`DeepFilterNet` (AI denoise)** can help truly bad audio but hurt clean audio —
-  in this repo it once ran away into hallucination loops. Opt-in, A/B first. (Also
-  needs a Rust toolchain to install — see §4.)
+  in this repo it once ran away into hallucination loops. Opt-in, A/B first. Two
+  install paths: (a) **prebuilt `deep-filter` binary** from the
+  [DeepFilterNet releases](https://github.com/Rikorose/DeepFilterNet/releases) —
+  no Rust; `chmod +x` it and pass `--deepfilter-command ./deep-filter`; or
+  (b) `recall[deepfilternet]`, which compiles `deepfilterlib` via Rust/cargo
+  (`brew install rust` first). Run with `--enhance deepfilternet` (or chain:
+  `--enhance deepfilternet,ffmpeg`).
 - **Decision rule:** none of these is universally right, so the enhancer stays a
   flag (C2 / guardrail L5). `ffmpeg` is the safe default; reach for `demucs` or
   `deepfilternet` only when a recording is genuinely noisy, and confirm with

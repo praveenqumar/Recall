@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 
 from . import asr, diarize as diar, enhance as enh, identity, notes as notes_mod
@@ -42,8 +42,9 @@ def run(cfg) -> None:
     if existing and not cfg.force:
         log("store: recorded output missing on disk; regenerating")
 
+    # include time so repeat/--force runs the same day don't overwrite each other
     file_stem = store.dated_stem(audio_in, cfg.title,
-                                 date.today().strftime("%d-%m-%Y"))
+                                 datetime.now().strftime("%d-%m-%Y_%H%M%S"))
     title = cfg.title or audio_in.stem
 
     metrics = Metrics()

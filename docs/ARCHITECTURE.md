@@ -208,7 +208,8 @@ python -m recall --help        # every flag
 ```
 
 **Outputs** land in `--output-dir` (default `~/.recall`), named
-`<DD-MM-YYYY>_<title>_<file>` (title = `--title` or filename slug):
+`<DD-MM-YYYY_HHMMSS>_<title>_<file>` (title = `--title` or filename slug; the time
+keeps repeat/`--force` runs from overwriting each other):
 `<stem>.transcript.md`, `<stem>.transcript.json`, `<stem>.notes.md`, and
 `<stem>.report.<slug>.md` per `--report-for`.
 

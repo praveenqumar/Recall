@@ -4,175 +4,244 @@ A professional-but-personal **meeting synthesizer**: offline, on-device
 transcription for **Hinglish** (Hindi + English) meeting audio, with AI-generated
 English notes, cross-session speaker identity, and per-person collaboration
 profiles. Recall *remembers people across meetings* — name a voice once and it is
-recognized in every later recording. Everything runs locally except the final
-notes/personas/reports, which use your Claude subscription via `claude -p` with a
-local MLX fallback.
+auto-recognized in every later recording.
 
-> The CLI ships as the `recall` package — run it with `python -m recall`.
+Everything runs **locally on your Mac** except the final notes/personas/reports,
+which use your Claude subscription via `claude -p` (with a fully-local MLX
+fallback). Your audio never leaves the machine.
 
 ```
-audio ─► ingest ─► [enhance] ─► ASR ─► [diarize+identify] ─► [personas]
-        ffmpeg     pluggable    pluggable  pyannote+voiceprints  profiles
+audio ─► ingest ─► enhance ─► ASR ─► diarize+identify ─► personas
+        ffmpeg     ffmpeg DSP  Whisper  pyannote+voiceprints  profiles
                   ─► assemble (+coverage) ─► notes (+tailored reports)
                      .md / .json              claude → local MLX
 ```
 
-The two historically contested choices are now **configuration, not forks** — the
-ASR backend (`--asr`) and the enhancer (`--enhance`) are pluggable, so the per-file
-winners drop in as defaults (the design decisions are in ARCHITECTURE §9; the A/B
-harness is `scripts/ab_test.py`).
+> **Deeper docs:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (full architecture,
+> package API, design decisions) · [`AGENTS.md`](AGENTS.md) (contributor brief).
 
-> **Full reference:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — pipeline
-> diagram, ML models, install + hardware requirements, every CLI flag, the package
-> API, design decisions, and an agent/developer guide. Contributing agents: start
-> with [`AGENTS.md`](AGENTS.md).
+---
 
-## Install
+## How it works (the 7 stages)
 
-Recall is a pip-installable package (`src/` layout). Create the project venv and
-install it editable with the backend extras you want:
+| # | stage | what it does |
+|---|---|---|
+| 1 | **ingest** | `ffmpeg` decodes any input (m4a/mp3/wav/mp4) → 16 kHz mono PCM wav (Whisper's native format) |
+| 2 | **enhance** | light DSP cleanup (highpass/lowpass/denoise/loudnorm) so levels are consistent |
+| 3 | **ASR** | Whisper turns speech → timestamped text segments |
+| 4 | **diarize + identify** | pyannote finds *who spoke when*; voiceprints match speakers to known people across meetings |
+| 5 | **personas** | per-person collaboration profiles updated from their utterances |
+| 6 | **assemble** | build the `.md`/`.json` transcript + coverage/hallucination diagnostics |
+| 7 | **notes** | Claude writes meeting notes (+ optional per-person tailored reports) |
+
+Stages run **sequentially** to respect the 18 GB unified-memory budget (never holds
+Whisper and the local LLM at once).
+
+---
+
+## Models — what runs, and why
+
+| job | model | engine | why |
+|---|---|---|---|
+| **speech → text** | `whisper-large-v3` | faster-whisper (CPU) **or** mlx-whisper (Apple GPU) | most accurate Whisper; handles Hindi + English |
+| **who spoke when** | `pyannote/speaker-diarization-3.1` (+ `segmentation-3.0`, `speaker-diarization-community-1`) | pyannote.audio | speaker turns + a ~256-d voiceprint per speaker |
+| **notes / personas / reports** | Claude | `claude -p` (your subscription) | translates Hinglish + writes notes, repairs ASR garbles |
+| **notes (offline fallback)** | `Qwen2.5-7B-Instruct-4bit` | mlx-lm (Apple GPU) | fully-local notes when Claude is unavailable |
+| **enhance (optional)** | DeepFilterNet / Demucs | CLI | AI denoise / vocal isolation — only for genuinely noisy audio |
+
+> **model vs engine:** `whisper-large-v3` is the *model* (the trained weights).
+> `--asr faster` / `--asr mlx` picks the *engine* that runs it (CPU vs Apple GPU).
+> Same model either way. Model weights auto-download from HuggingFace on first use
+> (cached in `~/.cache/huggingface`, ~8 GB).
+
+---
+
+## Install (uv — recommended)
 
 ```bash
+# system tools
 brew install ffmpeg
-python3 -m venv .venv-transcribe && source .venv-transcribe/bin/activate
-pip install -e '.[all]'                    # or '.[mlx,faster,diarize]' — pick backends
-npm install -g @anthropic-ai/claude-code   # for `claude -p`; log in once
+npm install -g @anthropic-ai/claude-code      # for notes; run `claude` once to log in
+
+# install Recall as a global command (Apple Silicon)
+uv tool install "recall[mlx,faster,diarize] @ git+https://github.com/praveenqumar/Recall.git"
 ```
 
-Extras: `mlx` (Apple-Silicon ASR + offline notes), `faster` (portable CPU ASR),
-`diarize` (speaker labels), `demucs`/`deepfilternet` (enhancers), `romanize`,
-`all`. `all` excludes `deepfilternet` — its native lib (`deepfilterlib`) ships no
-prebuilt wheel. To use the DeepFilterNet enhancer, either grab the prebuilt
-`deep-filter` binary from its [releases](https://github.com/Rikorose/DeepFilterNet/releases)
-(no Rust — `recall … --enhance deepfilternet --deepfilter-command ./deep-filter`),
-or `brew install rust` then `recall[deepfilternet]`. The core install needs
-only stdlib + tqdm/psutil. (`requirements.txt` mirrors `all` if you prefer
-`pip install -r requirements.txt`.) On `uv`, use
-`uv pip install -e '.[all]'` into `.venv-transcribe`.
-
-Diarization (optional, one-time): make a free huggingface.co account, accept the
-conditions on `pyannote/segmentation-3.0`, `pyannote/speaker-diarization-3.1`, and
-`pyannote/speaker-diarization-community-1`, create a token, and
-`export HF_TOKEN=hf_xxx`.
-
-## Editor / LSP setup
-
-The editable install above already makes `recall` resolvable to any language
-server. The repo also ships `pyrightconfig.json` (server pointed at
-`.venv-transcribe`, `src/` on the path, optional lazy-imported ML backends
-downgraded to warnings) and `.vscode/settings.json` (interpreter + pytest). In your
-editor, select the `.venv-transcribe` interpreter and you get go-to-def,
-find-references, and type checks across the package.
-
-## Usage
-
+Now `recall` works from any folder. Verify the build:
 ```bash
-# typical: speaker labels on, Claude notes with local fallback
-python -m recall ~/VoiceMemos/standup.m4a
-
-# pick the portable backend (works off Apple Silicon)
-python -m recall meeting.m4a --asr faster
-
-# try an enhancer (A/B it first — see scripts/ab_test.py)
-python -m recall meeting.m4a --enhance ffmpeg
-
-# fully offline notes / transcript only / no speaker labels
-python -m recall meeting.m4a --notes-engine local
-python -m recall meeting.m4a --notes-engine none
-python -m recall meeting.m4a --no-diarize
-
-# later runs auto-recognise people; tailor reports to two of them
-python -m recall team-sync.m4a --report-for "Priya" --report-for "Rahul"
+recall --version          # e.g. recall 0.1.1.dev42+g395a63d
 ```
 
-`python -m recall --help` lists every flag. After `pip install`, the `recall`
-console command works too: `recall standup.m4a`.
+**Diarization (optional, one-time):** make a free huggingface.co account, accept the
+conditions on all three gated models —
+[`segmentation-3.0`](https://huggingface.co/pyannote/segmentation-3.0),
+[`speaker-diarization-3.1`](https://huggingface.co/pyannote/speaker-diarization-3.1),
+[`speaker-diarization-community-1`](https://huggingface.co/pyannote/speaker-diarization-community-1)
+— create a token, and `export HF_TOKEN=hf_xxx` (put it in `~/.zshrc`).
 
-### Recipes (copy-paste)
+**Update later** (after new commits): `uv tool install --force "recall[mlx,faster,diarize] @ git+https://github.com/praveenqumar/Recall.git"`. Confirm with `recall --version`.
+
+### Extras (pick the backends you want)
+`mlx` (Apple-Silicon ASR + offline notes) · `faster` (portable CPU ASR) ·
+`diarize` (speaker labels) · `demucs` / `deepfilternet` (enhancers) · `romanize` · `all`.
+
+> `[all]` excludes `deepfilternet` — its native lib needs a Rust toolchain. To use
+> it: grab the prebuilt `deep-filter` binary from
+> [DeepFilterNet releases](https://github.com/Rikorose/DeepFilterNet/releases) and
+> pass `--deepfilter-command ./deep-filter` (no Rust), or `brew install rust` then
+> add `recall[deepfilternet]`.
+
+### Dev install (edit code, test live — no reinstall)
 ```bash
-# GPU (mlx) + ffmpeg cleanup, no speaker prompts, persistent identity   ← good default
-recall meeting.m4a --asr mlx --language en --enhance ffmpeg --no-enroll --data-dir ~/.recall/data
+git clone https://github.com/praveenqumar/Recall.git && cd Recall
+uv venv .venv-transcribe && source .venv-transcribe/bin/activate
+uv pip install -e '.[mlx,faster,diarize]'
+python -m recall meeting.m4a            # every src/ edit applies instantly
+python tests/run.py                     # 24 tests
+```
 
-# GPU (mlx), raw audio (faster, transcript noisier in silent gaps)
-recall meeting.m4a --asr mlx --language en --no-enroll --data-dir ~/.recall/data
+---
 
-# CPU (faster-whisper) — portable, no GPU, strongest anti-hallucination
-recall meeting.m4a --asr faster --language en --no-enroll --data-dir ~/.recall/data
+## Quickstart
 
-# name speakers interactively (omit --no-enroll); voiceprints persist + auto-match next time
-recall meeting.m4a --asr mlx --language en --data-dir ~/.recall/data
+```bash
+recall meeting.m4a                      # transcribe + speaker labels + Claude notes
+recall meeting.mp4                      # video works too (audio is extracted)
+cat ~/.recall/*_meeting.notes.md        # read the notes
+```
+Defaults are sensible: **Apple GPU ASR**, **English output**, **ffmpeg cleanup**,
+speaker labels on, Claude notes. Outputs land in `~/.recall/`.
+
+---
+
+## Speed vs reliability — `--asr mlx` vs `--asr faster`
+
+| | `--asr mlx` (default on Apple Silicon) | `--asr faster` |
+|---|---|---|
+| engine | mlx-whisper (Apple **GPU/Metal**) | faster-whisper (**CPU**) |
+| speed | **fast** ⚡ — uses the GPU | slower (CPU-bound) |
+| robustness | no built-in silence trimming → can hallucinate on quiet/silent gaps | **built-in VAD** trims silence → fewer hallucinations |
+| best for | clean audio where you want speed | rough/quiet recordings, or when mlx output looks repetitive |
+
+`--asr auto` (the default) picks **mlx on Apple Silicon, faster elsewhere**. If an
+mlx transcript comes out looping/garbled on a rough recording, switch to
+`--asr faster` — same model, more reliable engine.
+
+---
+
+## CLI flags — full reference
+
+`recall AUDIO [options]` · run `recall --help` for the live list.
+
+### Core
+| flag | default | purpose |
+|---|---|---|
+| `AUDIO` | — | input audio/video (m4a/mp3/wav/mp4…) |
+| `-o, --output-dir` | `~/.recall` | where transcript/notes/reports are written |
+| `--title NAME` | filename | meeting title used in the output filename + dedup store |
+| `--force` | off | **regenerate even if this audio was already processed** (see dedup below) |
+| `--version` | — | print the installed build (with git commit) |
+| `--no-progress` | off | disable progress bars / live resource readout (for scripts/cron) |
+
+### ASR (speech → text)
+| flag | default | purpose |
+|---|---|---|
+| `--asr {auto,mlx,faster}` | `auto` | engine: `auto` = mlx on Apple Silicon, faster elsewhere. `mlx` = GPU/fast, `faster` = CPU/robust |
+| `--model ID` | `large-v3` | Whisper model id. Pass a `*-turbo` id to trade accuracy for speed |
+| `--language {en,hi,auto}` | `en` | hint. `en` = Roman/English (best for Hinglish notes), `hi` = native Devanagari, `auto` = detect |
+| `--chunk-seconds N` | `240` | mlx chunk size for the progress bar; `0` = single max-accuracy pass |
+
+### Enhance (audio cleanup)
+| flag | default | purpose |
+|---|---|---|
+| `--enhance SPEC` | `ffmpeg` | `none` \| `ffmpeg` \| `deepfilternet` \| `demucs`. Comma-chain in order, e.g. `demucs,ffmpeg`. `none` = raw audio |
+| `--deepfilter-command CMD` | `deepFilter` | path/name of the DeepFilterNet binary |
+
+### Diarization & identity
+| flag | default | purpose |
+|---|---|---|
+| `--diarize` / `--no-diarize` | on | speaker labels via pyannote |
+| `--hf-token TOK` | env `HF_TOKEN` | HuggingFace token for the gated pyannote models |
+| `--data-dir DIR` | `~/.recall/data` | persistent voiceprints + personas (biometric — kept local) |
+| `--no-enroll` | off | don't prompt to name unknown speakers; only auto-assign confident matches |
+| `--id-high F` | `0.70` | cosine ≥ this → auto-assign a known speaker |
+| `--id-low F` | `0.45` | cosine in `[id-low, id-high)` → ask you |
+
+### Notes, personas, reports
+| flag | default | purpose |
+|---|---|---|
+| `--notes-engine {auto,claude,local,none}` | `auto` | `auto` = Claude then local MLX; `none` = transcript only |
+| `--local-model ID` | `Qwen2.5-7B-Instruct-4bit` | offline notes model |
+| `--report-for NAME` | — | also write a report tailored to NAME's profile (repeatable) |
+| `--no-personas` | personas on | skip building/updating per-person profiles |
+| `--romanize` | off | transliterate Devanagari → Roman (ITRANS) |
+| `--keep-repeats` | off | keep Whisper's looped/repeated text (default: collapse it to save tokens) |
+
+---
+
+## Re-running the same audio (dedup) & `--force`
+
+Every run is keyed by the **audio's content hash** in a small SQLite index
+(`~/.recall/recall.db`). So:
+
+- **Run the same recording again** → Recall prints the **existing** transcript/notes
+  paths and skips the work — no wasted ASR time or Claude tokens.
+- **`--force`** → ignore the cache and **regenerate** (e.g. after changing `--asr`,
+  `--enhance`, or `--model`). Each forced run writes a fresh timestamped file, so
+  old outputs aren't overwritten.
+
+Output filenames: `<DD-MM-YYYY_HHMMSS>_<title>_<file>.transcript.md` / `.notes.md`.
+
+---
+
+## Recipes
+
+```bash
+# fastest (Apple GPU), default cleanup + Claude notes
+recall meeting.m4a
+
+# rough/quiet recording → CPU engine with VAD (more reliable)
+recall meeting.m4a --asr faster
+
+# name speakers interactively → voiceprints persist + auto-match next time
+recall team-sync.m4a            # (omit --no-enroll to be prompted)
 
 # tailored report for a known person
-recall meeting.m4a --asr mlx --language en --report-for "Priya" --data-dir ~/.recall/data
+recall team-sync.m4a --report-for "Priya"
 
-# transcript only (no notes) / fully offline notes (no Claude)
-recall meeting.m4a --asr faster --language en --notes-engine none
-recall meeting.m4a --asr mlx    --language en --notes-engine local
+# fully offline notes (no Claude) / transcript only / raw audio
+recall call.m4a --notes-engine local
+recall call.m4a --notes-engine none
+recall call.m4a --enhance none
+
+# unattended (no prompts), regenerate from scratch
+recall call.m4a --no-enroll --force
 ```
-Flag cheatsheet: `--asr mlx` GPU / `faster` CPU · `--enhance ffmpeg` cleans silent-gap
-hallucination (chain with `--enhance demucs,ffmpeg` = isolate vocals then clean) ·
-`--no-enroll` skips speaker-naming prompts · `--data-dir ~/.recall/data` makes
-identity persist across runs from any folder. Full list: `recall --help`.
 
-### Re-running the same audio (dedup)
-Outputs and a small SQLite index live under `~/.recall/`. Each run is keyed by the
-audio's content hash, so **re-running the same recording prints the existing
-transcript/notes paths instead of regenerating** (saves ASR time + Claude tokens).
-Pass `--force` to regenerate, `--title "My Meeting"` to set the output filename
-(`<DD-MM-YYYY>_<title>_<file>.notes.md`).
+---
 
-## Package layout (vertical slices)
+## Data & privacy
 
-One capability per module under `src/recall/`:
-
-| module | responsibility |
-|---|---|
-| `common` | `Segment` + ffmpeg/wav primitives (stdlib only) |
-| `metrics` | resource readout + live progress UX |
-| `enhance` | **C2** — pluggable enhancers: `none` / `ffmpeg` / `deepfilternet` / `demucs` |
-| `asr` | **C1** — pluggable backends: `faster-whisper` / `mlx-whisper` (`auto` tries mlx then faster) |
-| `diarize` | pyannote diarization + speaker assignment |
-| `identity` | persistent voiceprints + cross-session resolution |
-| `personas` | per-person living collaboration profiles |
-| `generate` | Claude (`claude -p`) → local-MLX text engine (shared) |
-| `transcript` | assemble `.md`/`.json` + romanize + **coverage diagnostics** |
-| `notes` | meeting notes + per-person tailored reports |
-| `store` | SQLite dedup index (audio-hash → existing transcript/notes) |
-| `pipeline` | orchestration (wires the slices together, sequentially) |
-| `cli` | argument parsing / entry point (`python -m recall`) |
-
-Prompts live in `src/recall/prompts/{notes,persona,report}.md`. Each slice owns its
-optional heavy dependency and degrades gracefully when it's missing, so the package
-imports cleanly even without the ML stack.
-
-## Data
-
-Voiceprints + personas persist under `--data-dir` (default `~/.recall/data/`):
+Voiceprints + personas live under `--data-dir` (`~/.recall/data/`):
 `voiceprints.json` and `people/<slug>/{profile.md, utterances.jsonl}`. This is
-biometric/personal data about colleagues — keep it local.
+**biometric/personal data** about colleagues — it stays on your disk and is
+git-ignored. The transcript is sent to Claude for notes; treat generated text as
+influenced by the recording's content.
 
-## Coverage diagnostic
+## Coverage & hallucination diagnostics
 
-Every run reports a **speech-coverage ratio** and the largest silent gaps, and
-warns when coverage is low — both example recordings here silently dropped ~19
-minutes, which this catches. (Design doc §4 / L6.)
+Every run reports a **speech-coverage ratio** + largest silent gaps, and warns on
+likely **hallucination loops** (repeated phrases / low confidence) — so a transcript
+that silently dropped audio or looped is caught, not trusted blindly.
 
 ## Tests
 
-No pytest required:
-
 ```bash
-python tests/run.py        # identity logic + mocked end-to-end pipeline + store/dedup
-# or, if you have pytest:
-pytest tests/
+python tests/run.py        # 24 tests, no pytest needed (only ffmpeg required)
 ```
 
 ## Repo map
-
-- `src/recall/` — the package (this README)
-- `scripts/ab_test.py` — A/B harness for the contested axes (run on the Mac)
-- `scripts/transcribe_audio.py` — original standalone faster-whisper script (legacy)
-- `AGENTS.md` — working brief for contributing agents
-- `docs/ARCHITECTURE.md` — the deep reference (architecture, models, CLI, API, decisions)
-- `meetings/` — per-meeting outputs
-```
+- `src/recall/` — the package (one capability per module; see ARCHITECTURE)
+- `scripts/ab_test.py` — A/B harness for ASR backend / enhancer / language
+- `scripts/seed_voiceprints.py` — enroll a meeting's speakers without the tty prompt
+- `docs/ARCHITECTURE.md` — deep reference · `AGENTS.md` — contributor brief

@@ -93,6 +93,16 @@ def run(cfg) -> None:
             vstore.save()
             identified = sorted(set(label_to_name.values()))
 
+        # coverage on the RAW segments so the L6 hallucination warning still fires,
+        # then collapse the loops for everything downstream (personas + Claude).
+        cov = tx.coverage(segs, duration)
+        if not cfg.keep_repeats:
+            n0 = len(segs)
+            segs = tx.compress_repeats(segs)
+            if len(segs) < n0:
+                log(f"compressed {n0} -> {len(segs)} segments "
+                    "(collapsed repeated/looped text)")
+
         # personas must use RAW utterances, before any romanization
         do_personas = cfg.personas and identified
         stage(5, n_stages, "Personas" + ("" if do_personas else " (skipped)"))
@@ -102,7 +112,6 @@ def run(cfg) -> None:
                                         persona_prompt, generate_par, parallel=par)
 
         stage(6, n_stages, "Assemble")
-        cov = tx.coverage(segs, duration)
         if cfg.romanize:
             tx.romanize(segs)
         transcript_md, transcript_json = tx.build_transcript(segs, title, cov)

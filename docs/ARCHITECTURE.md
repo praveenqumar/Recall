@@ -259,6 +259,7 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | `--local-model` | `Qwen2.5-7B-Instruct-4bit` | offline notes model (mlx-lm) |
 | `--notes-prompt` | `prompts/notes.md` | notes instruction file |
 | `--romanize` | off | transliterate Devanagari → Roman (ITRANS) |
+| `--keep-repeats` | off | keep Whisper's looped/repeated text (default: collapse it before notes to save tokens) |
 | `--no-progress` | off | disable progress bars / live resource readout (scripts/cron) |
 
 ---

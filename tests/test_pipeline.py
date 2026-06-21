@@ -109,6 +109,18 @@ def test_pipeline_end_to_end(tmp_path, monkeypatch):
     assert "नमस्ते" in md.read_text()
 
 
+def test_compress_repeats():
+    segs = [Segment(0, 1, "hello"),
+            Segment(1, 2, "झाल झाल"), Segment(2, 3, "झाल झाल"),
+            Segment(3, 4, "झाल झाल"), Segment(4, 5, "bye")]
+    out = tx.compress_repeats(segs)
+    assert [s.text for s in out] == ["hello", "झाल झाल", "bye"]  # looped segs -> 1
+    assert out[1].end == 4.0                                      # end extended over run
+    # within-segment word run
+    assert tx.compress_repeats([Segment(0, 1, "that that that is good")])[0].text \
+        == "that is good"
+
+
 def test_pmap_preserves_order():
     from recall.generate import pmap
     assert pmap([lambda i=i: i * 10 for i in range(5)]) == [0, 10, 20, 30, 40]

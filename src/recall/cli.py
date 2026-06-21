@@ -63,6 +63,9 @@ def build_parser() -> argparse.ArgumentParser:
     # --- output / notes ---
     p.add_argument("--romanize", action="store_true",
                    help="transliterate Devanagari to Roman (default: off)")
+    p.add_argument("--keep-repeats", action="store_true",
+                   help="keep Whisper's repeated/looped text (default: collapse it "
+                        "to save tokens + clean the transcript)")
     p.add_argument("--notes-engine", choices=["auto", "claude", "local", "none"],
                    default="auto", help="auto = Claude then local (default)")
     p.add_argument("--local-model",

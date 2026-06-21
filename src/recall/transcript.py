@@ -10,10 +10,29 @@ coverage()           -> the silent-gap diagnostic (design doc L6 / §4): both
 """
 from __future__ import annotations
 
+import re
 from collections import Counter
 from dataclasses import asdict
 
 from .common import Segment, fmt_ts, log
+
+# immediate same-word run: "that that that" -> "that", "है है है" -> "है"
+_WORD_RUN = re.compile(r"\b(\w+)(?:\s+\1\b)+", re.IGNORECASE | re.UNICODE)
+
+
+def compress_repeats(segs: list[Segment]) -> list[Segment]:
+    """Strip Whisper hallucination repetition before the LLM sees it: collapse
+    immediate same-word runs inside each segment, then merge consecutive segments
+    with identical text into one (extending its end). Cuts tokens fed to Claude
+    without losing real content; near-no-op on clean transcripts."""
+    out: list[Segment] = []
+    for s in segs:
+        s.text = _WORD_RUN.sub(r"\1", s.text)
+        if out and out[-1].text.strip().lower() == s.text.strip().lower():
+            out[-1].end = s.end          # absorb the duplicate run
+        else:
+            out.append(s)
+    return out
 
 
 def romanize(segs: list[Segment]) -> None:

@@ -3,7 +3,6 @@
 > Canonical reference for **using**, **operating**, and **extending** Recall (the
 > `recall` package).
 > If you are an agent picking this repo up cold: read this file top-to-bottom, then
-> [`files/HANDOFF.md`](../files/HANDOFF.md) (original contract) and
 > [`docs/reconciliation-and-merged-design.md`](reconciliation-and-merged-design.md)
 > (why the design is what it is). The README is the short user-facing version; this
 > is the deep one.
@@ -344,6 +343,6 @@ diarization so it runs anywhere (only ffmpeg required).
   speakers; revisit once the store has many people.
 - Interactive enrollment requires a TTY; for unattended runs use `--no-enroll` or
   pre-seed with `scripts/seed_voiceprints.py`.
-- Not yet built (see HANDOFF §11): `recall people` management command, `setup.sh`,
+- Not yet built (roadmap): `recall people` management command, `setup.sh`,
   `--batch` folder mode, threshold auto-calibration, non-destructive VAD,
   cross-meeting rollups.

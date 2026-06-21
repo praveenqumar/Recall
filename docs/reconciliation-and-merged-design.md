@@ -6,7 +6,11 @@
 > where the tracks genuinely contradict each other are **deferred to an A/B test**
 > on real recordings (`scripts/ab_test.py`), because only evidence can settle them.
 >
-> Written after studying: `files/HANDOFF.md`, `files/recall.py`, `files/identity.py`,
+> This is a point-in-time design record. References below to `HANDOFF.md` and the
+> early `files/*.py` prototypes are historical — those artifacts are no longer kept
+> in the repo; the merged design they led to is the current `recall/` package.
+>
+> Written after studying: `HANDOFF.md`, the early prototype modules,
 > `docs/transcription-pipeline-design.md`, `docs/requirements-solution-decisions.md`,
 > `scripts/transcribe_audio.py`, the committed transcripts, and `git log`.
 

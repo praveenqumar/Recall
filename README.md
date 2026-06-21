@@ -133,6 +133,5 @@ pytest tests/
 - `scripts/ab_test.py` — A/B harness for the contested axes (run on the Mac)
 - `scripts/transcribe_audio.py` — original standalone faster-whisper script (legacy)
 - `docs/` — design, reconciliation, A/B runbook
-- `files/HANDOFF.md` — original project handoff (historical reference)
 - `meetings/` — per-meeting outputs
 ```

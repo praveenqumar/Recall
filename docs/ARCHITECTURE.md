@@ -113,6 +113,29 @@ swap any of them and the rest of the pipeline is untouched.
 injects errors Claude can't undo. The local pipeline produces only a faithful raw
 transcript; Claude (or Qwen) does translation *and* notes in one pass.
 
+**Why the default enhancer is `ffmpeg`, and why `demucs`/`DeepFilterNet` are opt-in
+(D2):**
+- **Whisper is trained on real-world noisy audio** — it is *robust to* moderate
+  noise. Cleaning aggressively removes spectral cues and adds artifacts, which
+  research and this repo's own runs show can *raise* WER (~20% reported for generic
+  denoisers).
+- **`ffmpeg` is not a denoiser — it's conservative DSP:** highpass 80 Hz (rumble),
+  lowpass 8 kHz (hiss outside the speech band), and `loudnorm` (consistent levels).
+  This is standard ASR preprocessing: low-risk, and the loudness normalization
+  reduces the silent-gap hallucination Whisper does on quiet/level-varying audio.
+  It's free (ffmpeg is already required for ingest). Hence the default.
+- **`demucs` is the wrong tool for meetings.** It's a *music source-separation*
+  model — built to pull vocals out of songs. On speech it introduces separation
+  artifacts and is slow (minutes/run); it helps only genuinely music/noise-saturated
+  recordings. Opt-in, A/B first.
+- **`DeepFilterNet` (AI denoise)** can help truly bad audio but hurt clean audio —
+  in this repo it once ran away into hallucination loops. Opt-in, A/B first. (Also
+  needs a Rust toolchain to install — see §4.)
+- **Decision rule:** none of these is universally right, so the enhancer stays a
+  flag (C2 / guardrail L5). `ffmpeg` is the safe default; reach for `demucs` or
+  `deepfilternet` only when a recording is genuinely noisy, and confirm with
+  `scripts/ab_test.py` that it improves the **notes**, not just the waveform.
+
 ---
 
 ## 4. Install (Apple Silicon Mac)

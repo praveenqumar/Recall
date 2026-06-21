@@ -210,7 +210,7 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | `--language` | `en` | language hint. `en` = Roman/English output (default, best for Hinglish notes), `hi` = native Devanagari, `auto` = detect |
 | `--chunk-seconds` | `240` | ASR chunk size for the progress bar; `0` = single max-accuracy pass (mlx only; faster streams) |
 | **Enhance (C2)** | | |
-| `--enhance {none,ffmpeg,deepfilternet,demucs}` | `none` | audio cleanup. File-dependent — A/B per recording |
+| `--enhance` | `none` | enhancer(s): `none`/`ffmpeg`/`deepfilternet`/`demucs`. Comma-separate to chain in order, e.g. `demucs,ffmpeg`. File-dependent — A/B per recording |
 | `--denoise` | — | deprecated alias for `--enhance demucs` |
 | `--deepfilter-command` | `deepFilter` | DeepFilterNet CLI name |
 | **Diarization** | | |

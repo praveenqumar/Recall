@@ -109,6 +109,17 @@ def test_pipeline_end_to_end(tmp_path, monkeypatch):
     assert "नमस्ते" in md.read_text()
 
 
+def test_enhance_chain_order(tmp_path, monkeypatch):
+    from recall import enhance as enh
+    seen = []
+    monkeypatch.setattr(enh, "enhance",
+                        lambda name, wav, *a, **k: (seen.append(name) or wav))
+    out = enh.enhance_chain("demucs, ffmpeg, none, deepfilternet",
+                            tmp_path / "x.wav", tmp_path, None, False)
+    assert seen == ["demucs", "ffmpeg", "deepfilternet"]   # in order, 'none' skipped
+    assert out == tmp_path / "x.wav"
+
+
 def test_second_run_dedups(tmp_path, monkeypatch):
     audio = tmp_path / "demo.wav"
     _make_wav(audio)

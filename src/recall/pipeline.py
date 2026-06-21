@@ -63,8 +63,8 @@ def run(cfg) -> None:
         log(f"duration: {fmt_ts(duration)}")
 
         stage(2, n_stages, f"Enhance ({cfg.enhance})")
-        wav = enh.enhance(cfg.enhance, wav, work, metrics, progress,
-                          cfg.deepfilter_command)
+        wav = enh.enhance_chain(cfg.enhance, wav, work, metrics, progress,
+                                cfg.deepfilter_command)
 
         stage(3, n_stages, f"ASR ({cfg.asr})")
         segs = asr.transcribe(cfg.asr, wav, cfg.language, cfg.chunk_seconds,

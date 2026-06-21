@@ -107,3 +107,14 @@ def enhance(name: str, wav: Path, work: Path, metrics: Metrics,
         log(f"enhance: unknown enhancer '{name}'; using original audio")
         return wav
     return fn(wav, work, metrics, progress, df_cmd)
+
+
+def enhance_chain(spec: str, wav: Path, work: Path, metrics: Metrics,
+                  progress: bool, df_cmd: str = "deepFilter") -> Path:
+    """Apply a comma-separated chain of enhancers in order, e.g. 'demucs,ffmpeg'
+    (isolate vocals, then DSP-clean them). Each step's output feeds the next;
+    'none'/blank steps are skipped."""
+    for name in [n.strip() for n in spec.split(",")]:
+        if name and name != "none":
+            wav = enhance(name, wav, work, metrics, progress, df_cmd)
+    return wav

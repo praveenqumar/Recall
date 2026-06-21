@@ -109,8 +109,9 @@ recall meeting.m4a --asr faster --language en --notes-engine none
 recall meeting.m4a --asr mlx    --language en --notes-engine local
 ```
 Flag cheatsheet: `--asr mlx` GPU / `faster` CPU · `--enhance ffmpeg` cleans silent-gap
-hallucination · `--no-enroll` skips speaker-naming prompts · `--data-dir ~/.recall/data`
-makes identity persist across runs from any folder. Full list: `recall --help`.
+hallucination (chain with `--enhance demucs,ffmpeg` = isolate vocals then clean) ·
+`--no-enroll` skips speaker-naming prompts · `--data-dir ~/.recall/data` makes
+identity persist across runs from any folder. Full list: `recall --help`.
 
 ### Re-running the same audio (dedup)
 Outputs and a small SQLite index live under `~/.recall/`. Each run is keyed by the

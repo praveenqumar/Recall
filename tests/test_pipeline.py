@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from recall import asr, diarize, notes as notes_mod, transcript as tx  # noqa: E402
 from recall.cli import build_parser  # noqa: E402

@@ -78,7 +78,7 @@ python -m recall team-sync.m4a --report-for "Priya" --report-for "Rahul"
 
 ## Package layout (vertical slices)
 
-One capability per module under `recall/`:
+One capability per module under `src/recall/`:
 
 | module | responsibility |
 |---|---|
@@ -95,7 +95,7 @@ One capability per module under `recall/`:
 | `pipeline` | orchestration (wires the slices together, sequentially) |
 | `cli` | argument parsing / entry point (`python -m recall`) |
 
-Prompts live in `recall/prompts/{notes,persona,report}.md`. Each slice owns its
+Prompts live in `src/recall/prompts/{notes,persona,report}.md`. Each slice owns its
 optional heavy dependency and degrades gracefully when it's missing, so the package
 imports cleanly even without the ML stack.
 
@@ -123,7 +123,7 @@ pytest tests/
 
 ## Repo map
 
-- `recall/` — the package (this README)
+- `src/recall/` — the package (this README)
 - `scripts/ab_test.py` — A/B harness for the contested axes (run on the Mac)
 - `scripts/transcribe_audio.py` — original standalone faster-whisper script (legacy)
 - `docs/` — design, reconciliation, A/B runbook

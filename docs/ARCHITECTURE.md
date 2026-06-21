@@ -254,7 +254,7 @@ recall-data/
     └── utterances.jsonl      {date,start,end,text} append-only, raw (pre-romanization)
 ```
 
-**Prompts** are plain Markdown in `recall/prompts/{notes,persona,report}.md` —
+**Prompts** are plain Markdown in `src/recall/prompts/{notes,persona,report}.md` —
 editable without touching code; override per-run with `--*-prompt`.
 
 ---

@@ -1,7 +1,8 @@
 {
   "venvPath": ".",
   "venv": ".venv-transcribe",
-  "include": ["recall", "scripts", "tests"],
+  "include": ["src", "scripts", "tests"],
+  "extraPaths": ["src"],
   "exclude": [
     "**/__pycache__",
     ".venv-transcribe",

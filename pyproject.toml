@@ -34,8 +34,10 @@ all = [
 recall = "recall.cli:main"
 
 [tool.setuptools]
-packages = ["recall"]
 include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.package-data]
 recall = ["prompts/*.md"]

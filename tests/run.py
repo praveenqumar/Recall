@@ -9,7 +9,7 @@ import tempfile
 import traceback
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import test_identity  # noqa: E402
 import test_pipeline  # noqa: E402

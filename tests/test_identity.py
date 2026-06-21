@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from recall import identity  # noqa: E402
 from recall.common import Segment  # noqa: E402

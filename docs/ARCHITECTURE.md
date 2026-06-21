@@ -135,8 +135,9 @@ npm install -g @anthropic-ai/claude-code   # then run `claude` once to log in
 uv venv .venv-transcribe
 VIRTUAL_ENV=.venv-transcribe uv pip install -e '.[all]'
 #   ^ installs recall + ASR backend(s), pyannote, tqdm/psutil, mlx-lm.
-#   extras are declared in pyproject.toml: mlx | faster | diarize | enhance |
-#   romanize | all. Plain pip works too: pip install -e '.[all]'.
+#   extras in pyproject.toml: mlx | faster | diarize | demucs | deepfilternet |
+#   romanize | all. (`all` omits deepfilternet — needs Rust/cargo.) Plain pip:
+#   pip install -e '.[all]'.
 
 # diarization access (one-time; then local forever).
 #   1. free huggingface.co account

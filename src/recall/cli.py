@@ -30,7 +30,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="ASR backend: auto = mlx on Apple Silicon, faster-whisper "
                         "elsewhere; or force mlx / faster (default: auto)")
     p.add_argument("--model", default=None,
-                   help="ASR model id (default: backend-specific turbo model)")
+                   help="ASR model id (default: large-v3; pass a *-turbo id for "
+                        "speed over accuracy)")
     p.add_argument("--language", default="en",
                    help="ASR language hint: 'en' Roman/English (default, best for "
                         "Hinglish notes), 'hi' native Devanagari, 'auto' to detect")

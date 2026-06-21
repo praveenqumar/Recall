@@ -32,9 +32,11 @@ HINGLISH_PRIMER = (
     "mid-sentence. Transcribe Hindi in Devanagari and keep English as English."
 )
 
+# full large-v3 (more accurate than the distilled turbo; slower but fine for
+# meeting notes). Override with --model …-turbo for speed.
 DEFAULT_MODEL = {
-    "mlx": "mlx-community/whisper-large-v3-turbo",
-    "faster": "large-v3-turbo",
+    "mlx": "mlx-community/whisper-large-v3-mlx",
+    "faster": "large-v3",
 }
 
 

@@ -100,8 +100,8 @@ swap any of them and the rest of the pipeline is untouched.
 
 | Stage | Model | Backend | Purpose | Notes |
 |---|---|---|---|---|
-| ASR | `large-v3-turbo` | **faster-whisper** (CPU int8, CTranslate2) | Speech→text; the **proven** path, runs everywhere, has built-in VAD + hallucination controls | default `--model large-v3-turbo`; `--asr faster` |
-| ASR | `mlx-community/whisper-large-v3-turbo` | **mlx-whisper** (Apple Metal/GPU) | Same job, native on Apple Silicon, faster on M-series | `--asr mlx`; **weaker on `--language hi`** — can loop-hallucinate (use `--language en`) |
+| ASR | `large-v3` (default) | **faster-whisper** (CPU int8, CTranslate2) | Speech→text; the **proven** path, runs everywhere, built-in VAD + hallucination controls | `--asr faster`; `--model large-v3-turbo` for speed |
+| ASR | `mlx-community/whisper-large-v3-mlx` (default) | **mlx-whisper** (Apple Metal/GPU) | Same job, native on Apple Silicon | `--asr mlx`; full v3 is more accurate than turbo; **weaker on `--language hi`** — use `en` |
 | Diarization | `pyannote/speaker-diarization-3.1` | pyannote.audio 4.x (Torch/MPS) | "Who spoke when" + one speaker embedding per speaker | pulls `segmentation-3.0` **and** `speaker-diarization-community-1` (embedding model) — all 3 gated, need one-time HF accept |
 | Speaker embedding | `speaker-diarization-community-1` | (inside pyannote 4.x) | The ~256-d voiceprint vector that feeds the identity layer | bridge into `identity.py` |
 | Notes / personas / reports | Claude (via `claude -p`) | Claude Code headless | Translate Hinglish + write notes/personas/reports in one shot; repairs ASR garbles | **primary**, uses Max subscription, no API billing |
@@ -235,7 +235,7 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | `--force` | off | regenerate even if this audio is already in the store |
 | **ASR (C1)** | | |
 | `--asr {auto,mlx,faster}` | `auto` | backend. `auto` = try mlx then faster. `faster` is the proven path; `mlx` is fastest on Apple Silicon but weaker on `hi` |
-| `--model` | backend turbo | ASR model id (`large-v3` for max accuracy/slower) |
+| `--model` | `large-v3` | ASR model id (pass a `*-turbo` id for speed over accuracy) |
 | `--language` | `en` | language hint. `en` = Roman/English output (default, best for Hinglish notes), `hi` = native Devanagari, `auto` = detect |
 | `--chunk-seconds` | `240` | ASR chunk size for the progress bar; `0` = single max-accuracy pass (mlx only; faster streams) |
 | **Enhance (C2)** | | |

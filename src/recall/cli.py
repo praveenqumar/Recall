@@ -27,13 +27,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- ASR (C1) ---
     p.add_argument("--asr", choices=["auto", "mlx", "faster"], default="auto",
-                   help="ASR backend: auto (mlx then faster-whisper), mlx, or "
-                        "faster (default: auto)")
+                   help="ASR backend: auto = mlx on Apple Silicon, faster-whisper "
+                        "elsewhere; or force mlx / faster (default: auto)")
     p.add_argument("--model", default=None,
                    help="ASR model id (default: backend-specific turbo model)")
-    p.add_argument("--language", default="hi",
-                   help="ASR language hint ('hi' native Devanagari, 'en' Roman, "
-                        "'auto' to detect). Pending A/B — see docs (default: hi)")
+    p.add_argument("--language", default="en",
+                   help="ASR language hint: 'en' Roman/English (default, best for "
+                        "Hinglish notes), 'hi' native Devanagari, 'auto' to detect")
     p.add_argument("--chunk-seconds", type=float, default=240.0,
                    help="ASR chunk size for the progress bar; 0 = single "
                         "max-accuracy pass (default: 240)")

@@ -206,7 +206,7 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | **ASR (C1)** | | |
 | `--asr {auto,mlx,faster}` | `auto` | backend. `auto` = try mlx then faster. `faster` is the proven path; `mlx` is fastest on Apple Silicon but weaker on `hi` |
 | `--model` | backend turbo | ASR model id (`large-v3` for max accuracy/slower) |
-| `--language` | `hi` | language hint. `en` = Roman/English output (best for Hinglish today), `hi` = native Devanagari, `auto` = detect |
+| `--language` | `en` | language hint. `en` = Roman/English output (default, best for Hinglish notes), `hi` = native Devanagari, `auto` = detect |
 | `--chunk-seconds` | `240` | ASR chunk size for the progress bar; `0` = single max-accuracy pass (mlx only; faster streams) |
 | **Enhance (C2)** | | |
 | `--enhance {none,ffmpeg,deepfilternet,demucs}` | `none` | audio cleanup. File-dependent — A/B per recording |
@@ -375,9 +375,9 @@ notes quality**, tie-broken by coverage then speed (run `scripts/ab_test.py`).
   weaker on `hi`). Default `auto` (mlx then faster).
 - **C2** enhancer — `none` / `ffmpeg` / `deepfilternet` / `demucs`. **File-dependent**
   (DeepFilterNet helped some files, looped on others), so it stays a flag.
-- **C3** language — `en` (Roman, easiest to summarize today) vs `hi` (native
-  Devanagari, Claude translates once at the end). Default `hi`, but `en` is the
-  proven config.
+- **C3** language — `en` (Roman, easiest to summarize) vs `hi` (native Devanagari,
+  Claude translates once at the end). **Default `en`** — the proven config; `hi`
+  available for native-script transcripts.
 
 > Whisper settings baked into the `faster` backend (from the proven pipeline):
 > `beam_size=5`, `condition_on_previous_text=False` (curbs loops), `vad_filter=True`

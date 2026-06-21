@@ -37,11 +37,29 @@ docs/        ARCHITECTURE.md (the one deep doc)
 ```bash
 python3 -m venv .venv-transcribe && source .venv-transcribe/bin/activate
 pip install -e '.[all]'                 # extras: mlx|faster|diarize|enhance|romanize|all
-python tests/run.py                      # 13 tests, mocks ASR+diarize, only ffmpeg required
+python tests/run.py                      # mocks ASR+diarize, only ffmpeg required
 python -m recall meeting.m4a --asr faster --language en   # proven config
 ```
 Diarization needs `HF_TOKEN` + one-time accept of three gated pyannote models
 (`segmentation-3.0`, `speaker-diarization-3.1`, `speaker-diarization-community-1`).
+
+### Common commands (copy-paste)
+```bash
+# GPU (mlx) + ffmpeg cleanup, no prompts, persistent identity  ← good default
+recall meeting.m4a --asr mlx --language en --enhance ffmpeg --no-enroll --data-dir ~/.recall/data
+# GPU (mlx), raw audio
+recall meeting.m4a --asr mlx --language en --no-enroll --data-dir ~/.recall/data
+# CPU (faster), portable, strongest anti-hallucination
+recall meeting.m4a --asr faster --language en --no-enroll --data-dir ~/.recall/data
+# name speakers interactively (omit --no-enroll) → voiceprints persist + auto-match
+recall meeting.m4a --asr mlx --language en --data-dir ~/.recall/data
+# tailored report / transcript only / offline notes
+recall meeting.m4a --asr mlx --language en --report-for "Priya" --data-dir ~/.recall/data
+recall meeting.m4a --asr faster --language en --notes-engine none
+recall meeting.m4a --asr mlx    --language en --notes-engine local
+```
+`--asr mlx` GPU / `faster` CPU · `--enhance ffmpeg` cleans gap-hallucination ·
+`--no-enroll` skips naming prompts · `--data-dir ~/.recall/data` persists identity.
 
 ## Updating the installed CLI
 A globally-installed `recall` (via `uv tool` / `pipx`) is a frozen copy — it does

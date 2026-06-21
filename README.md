@@ -83,6 +83,31 @@ python -m recall team-sync.m4a --report-for "Priya" --report-for "Rahul"
 `python -m recall --help` lists every flag. After `pip install`, the `recall`
 console command works too: `recall standup.m4a`.
 
+### Recipes (copy-paste)
+```bash
+# GPU (mlx) + ffmpeg cleanup, no speaker prompts, persistent identity   ← good default
+recall meeting.m4a --asr mlx --language en --enhance ffmpeg --no-enroll --data-dir ~/.recall/data
+
+# GPU (mlx), raw audio (faster, transcript noisier in silent gaps)
+recall meeting.m4a --asr mlx --language en --no-enroll --data-dir ~/.recall/data
+
+# CPU (faster-whisper) — portable, no GPU, strongest anti-hallucination
+recall meeting.m4a --asr faster --language en --no-enroll --data-dir ~/.recall/data
+
+# name speakers interactively (omit --no-enroll); voiceprints persist + auto-match next time
+recall meeting.m4a --asr mlx --language en --data-dir ~/.recall/data
+
+# tailored report for a known person
+recall meeting.m4a --asr mlx --language en --report-for "Priya" --data-dir ~/.recall/data
+
+# transcript only (no notes) / fully offline notes (no Claude)
+recall meeting.m4a --asr faster --language en --notes-engine none
+recall meeting.m4a --asr mlx    --language en --notes-engine local
+```
+Flag cheatsheet: `--asr mlx` GPU / `faster` CPU · `--enhance ffmpeg` cleans silent-gap
+hallucination · `--no-enroll` skips speaker-naming prompts · `--data-dir ~/.recall/data`
+makes identity persist across runs from any folder. Full list: `recall --help`.
+
 ## Package layout (vertical slices)
 
 One capability per module under `src/recall/`:

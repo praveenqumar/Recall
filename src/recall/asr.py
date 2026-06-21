@@ -15,11 +15,16 @@ own model id default so the caller can stay backend-agnostic.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
 from .common import Segment, die, fmt_ts, log, segs_from, slice_wav, wav_duration
 from .metrics import LiveStatus, Metrics
+
+# silence HuggingFace's "Fetching N files / Download complete" spam (our own bar
+# already shows ASR progress). Set before mlx_whisper/faster_whisper import hf_hub.
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 
 HINGLISH_PRIMER = (
     "The following is a casual business meeting spoken in Hinglish, a natural "
@@ -43,7 +48,7 @@ def _mlx(wav: Path, language: Optional[str], chunk_s: float, model: str,
     duration = wav_duration(wav)
     common = dict(path_or_hf_repo=model, language=language,
                   initial_prompt=HINGLISH_PRIMER, word_timestamps=False,
-                  condition_on_previous_text=False, verbose=False)
+                  condition_on_previous_text=False, verbose=None)
 
     if chunk_s <= 0 or duration <= chunk_s:
         log(f"ASR(mlx): {model} single pass, {fmt_ts(duration)}")

@@ -11,11 +11,12 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from datetime import date, datetime
 from pathlib import Path
 
 from . import asr, diarize as diar, enhance as enh, identity, notes as notes_mod
-from . import personas as personas_mod, transcript as tx
-from .common import die, fmt_ts, ingest, log, wav_duration
+from . import personas as personas_mod, store, transcript as tx
+from .common import audio_sha256, die, fmt_ts, ingest, log, wav_duration
 from .generate import make_generator, token_summary
 from .metrics import Metrics, stage
 
@@ -26,14 +27,27 @@ def run(cfg) -> None:
         die(f"audio file not found: {audio_in}")
     out_dir = Path(cfg.output_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
-    stem = audio_in.stem
-    meeting_id = stem
+    meeting_id = audio_in.stem
+
+    data_dir = Path(cfg.data_dir).expanduser().resolve()
+    store_db = data_dir.parent / "recall.db"
+    sha = audio_sha256(audio_in)
+    existing = store.lookup(store_db, sha)
+    if existing and not cfg.force:
+        print("\n✅ Already generated for this audio (use --force to regenerate):")
+        print(f"  Transcript: {existing['transcript_md']}")
+        if existing.get("notes_md"):
+            print(f"  Notes: {existing['notes_md']}")
+        return
+
+    file_stem = store.dated_stem(audio_in, cfg.title,
+                                 date.today().strftime("%d-%m-%Y"))
+    title = cfg.title or audio_in.stem
 
     metrics = Metrics()
     progress = not cfg.no_progress
     generate = make_generator(cfg.notes_engine, cfg.local_model, metrics, progress)
 
-    data_dir = Path(cfg.data_dir).expanduser().resolve()
     vstore = identity.VoiceStore(data_dir / "voiceprints.json")
     pstore = personas_mod.PersonaStore(data_dir / "people")
 
@@ -83,10 +97,10 @@ def run(cfg) -> None:
         cov = tx.coverage(segs, duration)
         if cfg.romanize:
             tx.romanize(segs)
-        transcript_md, transcript_json = tx.build_transcript(segs, stem, cov)
+        transcript_md, transcript_json = tx.build_transcript(segs, title, cov)
 
-    md_path = out_dir / f"{stem}.transcript.md"
-    json_path = out_dir / f"{stem}.transcript.json"
+    md_path = out_dir / f"{file_stem}.transcript.md"
+    json_path = out_dir / f"{file_stem}.transcript.json"
     md_path.write_text(transcript_md)
     json_path.write_text(json.dumps(transcript_json, ensure_ascii=False, indent=2))
     log(f"wrote {md_path.name} and {json_path.name}")
@@ -96,14 +110,21 @@ def run(cfg) -> None:
     notes_path = None
     if cfg.notes_engine != "none":
         notes_path = notes_mod.write_notes(transcript_md, Path(cfg.notes_prompt).read_text(),
-                                           out_dir, stem, generate)
+                                           out_dir, file_stem, generate)
         if notes_path:
             outputs.append(("Notes", notes_path))
 
     if cfg.report_for:
         outputs += notes_mod.write_reports(
             cfg.report_for, transcript_md, Path(cfg.report_prompt).read_text(),
-            pstore, out_dir, stem, generate)
+            pstore, out_dir, file_stem, generate)
+
+    store.record(store_db, audio_sha256=sha, audio_path=str(audio_in),
+                 title=title, duration_s=duration,
+                 created_at=datetime.now().isoformat(timespec="seconds"),
+                 transcript_md=str(md_path),
+                 notes_md=str(notes_path) if notes_path else "",
+                 coverage=cov.get("coverage"))
 
     print("\n✅ Done.")
     for label, path in outputs:

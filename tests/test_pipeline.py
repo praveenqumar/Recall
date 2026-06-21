@@ -100,13 +100,35 @@ def test_pipeline_end_to_end(tmp_path, monkeypatch):
     ])
     run(cfg)
 
-    md = out / "demo.transcript.md"
-    js = out / "demo.transcript.json"
+    md = next(out.glob("*demo.transcript.md"))
+    js = next(out.glob("*demo.transcript.json"))
     assert md.exists() and js.exists()
     payload = json.loads(js.read_text())
     assert len(payload["segments"]) == 2
     assert "coverage" in payload and payload["coverage"]["n_segments"] == 2
     assert "नमस्ते" in md.read_text()
+
+
+def test_second_run_dedups(tmp_path, monkeypatch):
+    audio = tmp_path / "demo.wav"
+    _make_wav(audio)
+    out = tmp_path / "out"
+    data = tmp_path / "data"
+    calls = {"n": 0}
+
+    def fake_asr(*a, **k):
+        calls["n"] += 1
+        return [Segment(0.0, 1.0, "hello")]
+
+    monkeypatch.setattr(asr, "transcribe", fake_asr)
+    args = [str(audio), "-o", str(out), "--data-dir", str(data),
+            "--asr", "faster", "--enhance", "none", "--no-diarize",
+            "--notes-engine", "none", "--no-progress"]
+    run(build_parser().parse_args(args))
+    run(build_parser().parse_args(args))          # same audio → short-circuits
+    assert calls["n"] == 1
+    run(build_parser().parse_args(args + ["--force"]))   # --force regenerates
+    assert calls["n"] == 2
 
 
 def test_pipeline_with_mocked_diarization(tmp_path, monkeypatch):
@@ -132,7 +154,7 @@ def test_pipeline_with_mocked_diarization(tmp_path, monkeypatch):
     ])
     run(cfg)
 
-    payload = json.loads((out / "demo2.transcript.json").read_text())
+    payload = json.loads(next(out.glob("*demo2.transcript.json")).read_text())
     speakers = {s["speaker"] for s in payload["segments"]}
     # unknown voiceprints with --no-enroll stay as diarization labels
     assert speakers == {"SPEAKER_00", "SPEAKER_01"}

@@ -108,6 +108,13 @@ Flag cheatsheet: `--asr mlx` GPU / `faster` CPU · `--enhance ffmpeg` cleans sil
 hallucination · `--no-enroll` skips speaker-naming prompts · `--data-dir ~/.recall/data`
 makes identity persist across runs from any folder. Full list: `recall --help`.
 
+### Re-running the same audio (dedup)
+Outputs and a small SQLite index live under `~/.recall/`. Each run is keyed by the
+audio's content hash, so **re-running the same recording prints the existing
+transcript/notes paths instead of regenerating** (saves ASR time + Claude tokens).
+Pass `--force` to regenerate, `--title "My Meeting"` to set the output filename
+(`<DD-MM-YYYY>_<title>_<file>.notes.md`).
+
 ## Package layout (vertical slices)
 
 One capability per module under `src/recall/`:
@@ -124,6 +131,7 @@ One capability per module under `src/recall/`:
 | `generate` | Claude (`claude -p`) → local-MLX text engine (shared) |
 | `transcript` | assemble `.md`/`.json` + romanize + **coverage diagnostics** |
 | `notes` | meeting notes + per-person tailored reports |
+| `store` | SQLite dedup index (audio-hash → existing transcript/notes) |
 | `pipeline` | orchestration (wires the slices together, sequentially) |
 | `cli` | argument parsing / entry point (`python -m recall`) |
 
@@ -133,7 +141,7 @@ imports cleanly even without the ML stack.
 
 ## Data
 
-Voiceprints + personas persist under `--data-dir` (default `./recall-data/`):
+Voiceprints + personas persist under `--data-dir` (default `~/.recall/data/`):
 `voiceprints.json` and `people/<slug>/{profile.md, utterances.jsonl}`. This is
 biometric/personal data about colleagues — keep it local.
 
@@ -148,7 +156,7 @@ minutes, which this catches. (Design doc §4 / L6.)
 No pytest required:
 
 ```bash
-python tests/run.py        # 13 tests: identity logic + mocked end-to-end pipeline
+python tests/run.py        # identity logic + mocked end-to-end pipeline + store/dedup
 # or, if you have pytest:
 pytest tests/
 ```

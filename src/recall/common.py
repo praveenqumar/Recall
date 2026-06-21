@@ -6,6 +6,7 @@ tests that never touch the ML backends.
 """
 from __future__ import annotations
 
+import hashlib
 import shutil
 import subprocess
 import sys
@@ -13,6 +14,16 @@ import wave
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+
+
+def audio_sha256(path: Path) -> str:
+    """Content hash of the input audio — the dedup key, stable across renames."""
+    # ponytail: full-file sha256; switch to size + partial hash if big files drag.
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 # --------------------------------------------------------------------------- #

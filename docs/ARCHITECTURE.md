@@ -178,9 +178,15 @@ python -m recall call.m4a --no-diarize
 python -m recall --help        # every flag
 ```
 
-**Outputs** land in `--output-dir` (default `./recall-out`):
+**Outputs** land in `--output-dir` (default `~/.recall`), named
+`<DD-MM-YYYY>_<title>_<file>` (title = `--title` or filename slug):
 `<stem>.transcript.md`, `<stem>.transcript.json`, `<stem>.notes.md`, and
 `<stem>.report.<slug>.md` per `--report-for`.
+
+**Dedup.** Each run is keyed by the audio's sha256 in a SQLite index
+(`store.py`, db at `<data-dir>/../recall.db` → `~/.recall/recall.db` by default).
+A repeat run on the same content short-circuits before ASR and prints the existing
+transcript/notes paths; `--force` regenerates and overwrites the row.
 
 **Operating long jobs** (a 50-min recording is ~10–20 min on CPU ASR): run in the
 background and tail the log, e.g.
@@ -194,7 +200,9 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | Flag | Default | Purpose |
 |---|---|---|
 | `AUDIO` | — | input audio/video file (m4a/mp3/wav/mp4…) |
-| `-o, --output-dir` | `./recall-out` | where transcript/notes/reports are written |
+| `-o, --output-dir` | `~/.recall` | where transcript/notes/reports are written |
+| `--title` | — | meeting title used in the dated output filename and the store |
+| `--force` | off | regenerate even if this audio is already in the store |
 | **ASR (C1)** | | |
 | `--asr {auto,mlx,faster}` | `auto` | backend. `auto` = try mlx then faster. `faster` is the proven path; `mlx` is fastest on Apple Silicon but weaker on `hi` |
 | `--model` | backend turbo | ASR model id (`large-v3` for max accuracy/slower) |
@@ -208,7 +216,7 @@ ASR jobs concurrently — they thrash CPU and risk the memory budget.
 | `--diarize` / `--no-diarize` | on | speaker labels via pyannote |
 | `--hf-token` | env `HF_TOKEN` | pyannote auth (gated models) |
 | **Identity & personas** | | |
-| `--data-dir` | `./recall-data` | persistent voiceprint + persona store |
+| `--data-dir` | `~/.recall/data` | persistent voiceprint + persona store |
 | `--no-enroll` | off | unattended: auto-assign confident matches only, never prompt for names |
 | `--id-high` | `0.70` | cosine ≥ this → auto-assign a known speaker |
 | `--id-low` | `0.45` | cosine in `[id-low, id-high)` → ambiguous, ask the human |
@@ -243,6 +251,8 @@ no port**. Its "API" is the Python package. Stable entry points:
 | `recall.personas.PersonaStore` | `add_utterances/read_profile/update_profile…` | living profiles |
 | `recall.generate.make_generator(engine, local_model, metrics, progress)` | → `generate(instructions, content, label)` | shared Claude→local text engine (used by notes/personas/reports) |
 | `recall.transcript.coverage(segs, duration, …)` | → dict | coverage + hallucination diagnostics (**L6**) |
+| `recall.store.lookup(db, sha)` / `record(db, **row)` / `dated_stem(...)` | dedup index | SQLite by audio sha256; skip regen on repeat runs |
+| `recall.common.audio_sha256(path)` | → str | content hash (dedup key) |
 | `recall.transcript.build_transcript(segs, title, cov)` | → `(md, json)` | assemble outputs |
 | `recall.common.Segment` | dataclass | the unit every stage consumes |
 

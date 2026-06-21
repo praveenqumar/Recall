@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import test_identity  # noqa: E402
 import test_pipeline  # noqa: E402
+import test_store  # noqa: E402
 
 
 class MonkeyPatch:
@@ -63,7 +64,7 @@ def run_module(mod):
 
 def main():
     total_p = total_f = 0
-    for mod in (test_identity, test_pipeline):
+    for mod in (test_identity, test_pipeline, test_store):
         print(f"\n== {mod.__name__} ==")
         p, f = run_module(mod)
         total_p += p

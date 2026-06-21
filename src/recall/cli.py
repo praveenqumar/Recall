@@ -18,8 +18,12 @@ def build_parser() -> argparse.ArgumentParser:
         prog="recall",
         description="Offline Hinglish meeting transcription + AI notes.")
     p.add_argument("audio", help="input audio/video file (m4a, mp3, wav, mp4 ...)")
-    p.add_argument("-o", "--output-dir", default="./recall-out",
-                   help="output directory (default: ./recall-out)")
+    p.add_argument("-o", "--output-dir", default="~/.recall",
+                   help="output directory (default: ~/.recall)")
+    p.add_argument("--title", default=None,
+                   help="meeting title used in output filenames and the store")
+    p.add_argument("--force", action="store_true",
+                   help="regenerate even if this audio was already processed")
 
     # --- ASR (C1) ---
     p.add_argument("--asr", choices=["auto", "mlx", "faster"], default="auto",
@@ -70,9 +74,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- identity & personas ---
     ident = p.add_argument_group("speaker identity & personas")
-    ident.add_argument("--data-dir", default="./recall-data",
+    ident.add_argument("--data-dir", default="~/.recall/data",
                        help="persistent store for voiceprints + personas "
-                            "(default: ./recall-data)")
+                            "(default: ~/.recall/data)")
     ident.add_argument("--no-enroll", action="store_true",
                        help="don't prompt to name unknown speakers; only "
                             "auto-assign confident voiceprint matches")

@@ -10,11 +10,11 @@ are the source of truth.
   merged to `main`** — `main` holds only the seed README. PR/merge when ready.
 - **Status:** src-layout, pip-installable (src kept *because* it's installable),
   tests green. Token-usage display shipped (issue #2, closed).
-- **Open feature — [issue #3](https://github.com/praveenqumar/Recall/issues/3):**
-  dedup runs by audio sha256 + a SQLite index under
-  `~/.recall/`, so re-running the same audio returns the existing notes/transcript
-  instead of regenerating. Decide first: where the `<title>` in the output filename
-  comes from (`--title` flag vs filename slug). Full breakdown in the issue.
+- **Done — [issue #3](https://github.com/praveenqumar/Recall/issues/3):** dedup by
+  audio sha256 + SQLite index (`store.py`). Default output + db now under
+  `~/.recall/` (db = `<data-dir>/../recall.db`). Re-run on same audio prints existing
+  paths; `--force` regenerates; `--title` sets the dated filename. `<title>` resolved
+  as: `--title` if given, else filename slug.
 - **ASR reality (this decides C1 per file):** `faster` (CPU) is most reliable;
   `mlx` (GPU) is faster but can hallucinate junk in silent gaps (e.g. `唐唐` / `drift`
   loops) even with `--language en`. **The deciding metric is notes quality, not
@@ -47,6 +47,7 @@ src/recall/        one capability per module (vertical slices):
   generate    shared Claude→local-MLX text engine
   transcript  assemble md/json + coverage & hallucination diagnostics
   notes       meeting notes + tailored reports
+  store       SQLite dedup index (audio sha256 → existing files) + dated naming
   pipeline    orchestration — start here to read control flow (run())
   cli         argparse / entry point
   prompts/    notes.md, persona.md, report.md (editable, not code)

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 from .common import have, log
@@ -20,6 +21,21 @@ from .metrics import LiveStatus, Metrics
 
 # the local model is loaded once and cached across calls (notes + N personas)
 _LOCAL_LM: dict = {}
+
+
+def parallel_ok(engine: str) -> bool:
+    """Concurrent generate() calls are safe ONLY on the Claude path — each is an
+    independent cloud subprocess. A local MLX model is a single in-process instance
+    and must stay serial (L4)."""
+    return engine in ("auto", "claude") and have("claude")
+
+
+def pmap(thunks: list, workers: int = 4) -> list:
+    """Run 0-arg callables concurrently, results in input order."""
+    if len(thunks) <= 1:
+        return [t() for t in thunks]
+    with ThreadPoolExecutor(max_workers=min(workers, len(thunks))) as ex:
+        return list(ex.map(lambda t: t(), thunks))
 
 # running Claude token total across this run's notes/personas/reports
 TOKENS = {"input": 0, "output": 0, "cost": 0.0}

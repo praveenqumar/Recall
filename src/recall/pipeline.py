@@ -17,7 +17,7 @@ from pathlib import Path
 from . import asr, diarize as diar, enhance as enh, identity, notes as notes_mod
 from . import personas as personas_mod, store, transcript as tx
 from .common import audio_sha256, die, fmt_ts, ingest, log, wav_duration
-from .generate import make_generator, token_summary
+from .generate import make_generator, parallel_ok, token_summary
 from .metrics import Metrics, stage
 
 
@@ -49,6 +49,11 @@ def run(cfg) -> None:
     metrics = Metrics()
     progress = not cfg.no_progress
     generate = make_generator(cfg.notes_engine, cfg.local_model, metrics, progress)
+    # concurrent claude -p calls (personas/reports) are I/O-bound and safe; use a
+    # quiet generator so their spinners don't clobber each other in the terminal.
+    par = parallel_ok(cfg.notes_engine)
+    generate_par = (make_generator(cfg.notes_engine, cfg.local_model, metrics, False)
+                    if par else generate)
 
     vstore = identity.VoiceStore(data_dir / "voiceprints.json")
     pstore = personas_mod.PersonaStore(data_dir / "people")
@@ -93,7 +98,7 @@ def run(cfg) -> None:
         if do_personas:
             persona_prompt = Path(cfg.persona_prompt).read_text()
             personas_mod.build_personas(segs, identified, meeting_id, pstore,
-                                        persona_prompt, generate)
+                                        persona_prompt, generate_par, parallel=par)
 
         stage(6, n_stages, "Assemble")
         cov = tx.coverage(segs, duration)
@@ -119,7 +124,7 @@ def run(cfg) -> None:
     if cfg.report_for:
         outputs += notes_mod.write_reports(
             cfg.report_for, transcript_md, Path(cfg.report_prompt).read_text(),
-            pstore, out_dir, file_stem, generate)
+            pstore, out_dir, file_stem, generate_par, parallel=par)
 
     store.record(store_db, audio_sha256=sha, audio_path=str(audio_in),
                  title=title, duration_s=duration,

@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from .common import Segment, log
+from .generate import pmap
 from .identity import raw_utterances_for, slugify
 
 
@@ -72,12 +73,21 @@ class PersonaStore:
 
 def build_personas(segs: list[Segment], names: list[str], meeting_id: str,
                    pstore: PersonaStore, persona_prompt: str,
-                   generate: Callable[[str, str, str], Optional[str]]) -> None:
-    """Capture raw utterances + update each identified person's profile."""
-    for name in names:
+                   generate: Callable[[str, str, str], Optional[str]],
+                   parallel: bool = False) -> None:
+    """Capture raw utterances + update each identified person's profile. People are
+    independent (separate files), so on the Claude path they update concurrently."""
+    def one(name: str) -> None:
         utts = raw_utterances_for(segs, name)
         pstore.add_utterances(name, meeting_id, utts)
         ok = pstore.update_profile(
             name, meeting_id, utts, persona_prompt,
             lambda instr, content, n=name: generate(instr, content, f"persona:{n}"))
         log(f"persona: {name} {'updated' if ok else 'logged (no LLM)'}")
+
+    thunks = [lambda n=name: one(n) for name in names]
+    if parallel:
+        pmap(thunks)
+    else:
+        for t in thunks:
+            t()

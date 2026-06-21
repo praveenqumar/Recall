@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from .common import log
+from .generate import pmap
 from .identity import slugify
 from .personas import PersonaStore
 
@@ -28,9 +29,9 @@ def write_notes(transcript_md: str, instructions: str, out_dir: Path, stem: str,
 
 def write_reports(report_for: list[str], transcript_md: str, report_prompt: str,
                   pstore: PersonaStore, out_dir: Path, stem: str,
-                  generate: Callable[..., Optional[str]]) -> list[tuple[str, Path]]:
-    out: list[tuple[str, Path]] = []
-    for name in report_for:
+                  generate: Callable[..., Optional[str]],
+                  parallel: bool = False) -> list[tuple[str, Path]]:
+    def one(name: str) -> Optional[tuple[str, Path]]:
         profile = pstore.read_profile(name)
         if not profile:
             log(f"report: no profile for '{name}' yet; using generic format")
@@ -38,8 +39,12 @@ def write_reports(report_for: list[str], transcript_md: str, report_prompt: str,
                    f"{profile or '(no profile on file)'}\n\n"
                    f"=== MEETING TRANSCRIPT ===\n{transcript_md}")
         report = generate(report_prompt, content, f"report:{name}")
-        if report:
-            rp = out_dir / f"{stem}.report.{slugify(name)}.md"
-            rp.write_text(report + "\n")
-            out.append((f"Report for {name}", rp))
-    return out
+        if not report:
+            return None
+        rp = out_dir / f"{stem}.report.{slugify(name)}.md"
+        rp.write_text(report + "\n")
+        return (f"Report for {name}", rp)
+
+    thunks = [lambda n=name: one(n) for name in report_for]
+    results = pmap(thunks) if parallel else [t() for t in thunks]
+    return [r for r in results if r]

@@ -109,6 +109,21 @@ def test_pipeline_end_to_end(tmp_path, monkeypatch):
     assert "नमस्ते" in md.read_text()
 
 
+def test_pmap_preserves_order():
+    from recall.generate import pmap
+    assert pmap([lambda i=i: i * 10 for i in range(5)]) == [0, 10, 20, 30, 40]
+
+
+def test_personas_parallel_updates_all(tmp_path):
+    from recall import personas as pm
+    store = pm.PersonaStore(tmp_path / "people")
+    segs = [Segment(0, 1, "hi", speaker="A"), Segment(1, 2, "yo", speaker="B")]
+    gen = lambda instr, content, label: f"profile {label}"   # noqa: E731
+    pm.build_personas(segs, ["A", "B"], "m1", store, "P", gen, parallel=True)
+    assert store.read_profile("A").strip() == "profile persona:A"
+    assert store.read_profile("B").strip() == "profile persona:B"
+
+
 def test_enhance_chain_order(tmp_path, monkeypatch):
     from recall import enhance as enh
     seen = []

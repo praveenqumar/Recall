@@ -28,30 +28,35 @@ decisions and `docs/ab-runbook.md` for how to settle them on your own audio.
 
 ## Install
 
+Recall is a pip-installable package (`src/` layout). Create the project venv and
+install it editable with the backend extras you want:
+
 ```bash
 brew install ffmpeg
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt          # install the ASR backend(s) you want
-npm install -g @anthropic-ai/claude-code  # for `claude -p`; log in once
+python3 -m venv .venv-transcribe && source .venv-transcribe/bin/activate
+pip install -e '.[all]'                    # or '.[mlx,faster,diarize]' — pick backends
+npm install -g @anthropic-ai/claude-code   # for `claude -p`; log in once
 ```
 
+Extras: `mlx` (Apple-Silicon ASR + offline notes), `faster` (portable CPU ASR),
+`diarize` (speaker labels), `enhance`, `romanize`, `all`. The core install needs
+only stdlib + tqdm/psutil. (`requirements.txt` mirrors `all` if you prefer
+`pip install -r requirements.txt`.) On `uv`, use
+`uv pip install -e '.[all]'` into `.venv-transcribe`.
+
 Diarization (optional, one-time): make a free huggingface.co account, accept the
-conditions on `pyannote/segmentation-3.0` and `pyannote/speaker-diarization-3.1`,
-create a token, and `export HF_TOKEN=hf_xxx`.
+conditions on `pyannote/segmentation-3.0`, `pyannote/speaker-diarization-3.1`, and
+`pyannote/speaker-diarization-community-1`, create a token, and
+`export HF_TOKEN=hf_xxx`.
 
 ## Editor / LSP setup
 
-For full code intelligence (go-to-def, references, type checks) install the
-package editable so the language server resolves `recall` and its backends:
-
-```bash
-VIRTUAL_ENV=.venv-transcribe uv pip install -e '.[all]'   # or .[mlx,faster,diarize]
-```
-
-`pyrightconfig.json` points the language server at `.venv-transcribe` and treats
-the optional ML backends (mlx/faster/pyannote/torch) as warnings — they are
-lazy-imported, so a partial install still type-checks cleanly. VS Code picks up
-`.vscode/settings.json` automatically.
+The editable install above already makes `recall` resolvable to any language
+server. The repo also ships `pyrightconfig.json` (server pointed at
+`.venv-transcribe`, `src/` on the path, optional lazy-imported ML backends
+downgraded to warnings) and `.vscode/settings.json` (interpreter + pytest). In your
+editor, select the `.venv-transcribe` interpreter and you get go-to-def,
+find-references, and type checks across the package.
 
 ## Usage
 
@@ -74,7 +79,8 @@ python -m recall meeting.m4a --no-diarize
 python -m recall team-sync.m4a --report-for "Priya" --report-for "Rahul"
 ```
 
-`python -m recall --help` lists every flag.
+`python -m recall --help` lists every flag. After `pip install`, the `recall`
+console command works too: `recall standup.m4a`.
 
 ## Package layout (vertical slices)
 

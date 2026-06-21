@@ -131,12 +131,13 @@ transcript; Claude (or Qwen) does translation *and* notes in one pass.
 brew install ffmpeg
 npm install -g @anthropic-ai/claude-code   # then run `claude` once to log in
 
-# python env (this repo uses a uv-managed venv at .venv-transcribe/)
+# python env + editable install of the package with the extras you want
+#   (this repo conventionally uses a uv-managed venv at .venv-transcribe/)
 uv venv .venv-transcribe
-VIRTUAL_ENV=.venv-transcribe uv pip install -r requirements.txt
-#   ^ installs the ASR backend(s), pyannote, tqdm/psutil, mlx-lm.
-#   optional extras (commented in requirements.txt): deepfilternet, demucs,
-#   indic-transliteration.
+VIRTUAL_ENV=.venv-transcribe uv pip install -e '.[all]'
+#   ^ installs recall + ASR backend(s), pyannote, tqdm/psutil, mlx-lm.
+#   extras are declared in pyproject.toml: mlx | faster | diarize | enhance |
+#   romanize | all. Plain pip works too: pip install -e '.[all]'.
 
 # diarization access (one-time; then local forever).
 #   1. free huggingface.co account
@@ -148,8 +149,9 @@ VIRTUAL_ENV=.venv-transcribe uv pip install -r requirements.txt
 export HF_TOKEN=hf_xxx          # put in ~/.zshrc to persist
 ```
 
-> Note: the venv is **uv-managed** and has no `pip` module. Always install with
-> `VIRTUAL_ENV=.venv-transcribe uv pip install ...`, never `python -m pip`.
+> Note: a `uv`-managed venv has no `pip` module — install with
+> `VIRTUAL_ENV=.venv-transcribe uv pip install ...`. A plain `python3 -m venv`
+> venv has `pip` and works with `pip install -e '.[all]'` directly.
 
 First run downloads model weights into the HF cache; subsequent runs are offline.
 

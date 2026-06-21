@@ -1,0 +1,26 @@
+# meeting-scribe — merged dependencies.
+# The pipeline is backend-agnostic (design doc §5): install the ASR backend(s) you
+# want and the optional slices you use. Pure-Python slices (identity, personas,
+# transcript, coverage) need nothing beyond stdlib.
+
+# --- progress / metrics (recommended) ---
+tqdm                   # ASR progress bar
+psutil                 # CPU / RAM in the live readout
+
+# --- ASR backend: Apple-Silicon native (Track B) ---
+mlx-whisper            # on-device ASR via Metal
+mlx-lm                 # local LLM fallback for notes (Qwen2.5-7B-4bit)
+
+# --- ASR backend: portable / proven (Track A) ---
+faster-whisper==1.2.1  # CPU ASR; works everywhere
+torch==2.5.1           # used by faster-whisper / pyannote
+torchaudio==2.5.1
+soundfile==0.14.0
+
+# --- diarization (recommended; one-time HF token + model accept) ---
+pyannote.audio         # speaker labels "who spoke when"
+
+# --- optional extras ---
+# deepfilternet==0.5.6   # --enhance deepfilternet (AI speech enhancement)
+# demucs                 # --enhance demucs (vocal isolation)
+# indic-transliteration  # --romanize (Devanagari -> Roman)

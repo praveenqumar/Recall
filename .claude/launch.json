@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "scribe (transcribe hinglish_audio)",
+      "runtimeExecutable": ".venv-transcribe/bin/python",
+      "runtimeArgs": ["-m", "scribe", "hinglish_audio.m4a", "--asr", "faster", "--language", "en"],
+      "port": null
+    }
+  ]
+}

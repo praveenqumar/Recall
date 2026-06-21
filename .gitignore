@@ -1,0 +1,42 @@
+# Python
+.venv*/
+__pycache__/
+*.py[cod]
+
+# Audio inputs / generated audio
+*.m4a
+*.mp3
+*.wav
+*.aac
+*.flac
+
+# Generated transcripts
+*.transcript.txt
+*.transcript.md
+*.transcript.json
+
+# Local temp/output
+*.enhanced.wav
+.DS_Store
+
+# Generated notes / reports / summaries (meeting content)
+*.notes.md
+*.report.*.md
+*.summary.md
+
+# Pipeline output dirs
+scribe-out/
+scribe-out-*/
+
+# Per-meeting archives (audio + summaries + metadata = meeting content/PII)
+meetings/
+
+# Biometric / personal: voiceprints + per-person personas — NEVER commit (D3/§8 privacy)
+scribe-data/
+
+# Background-run logs / pids
+logs/
+
+# Claude Code machine-local state (permission allowlist embeds local paths/filenames)
+.claude/settings.local.json
+.claude/settings.json

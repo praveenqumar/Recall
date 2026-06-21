@@ -43,6 +43,17 @@ python -m recall meeting.m4a --asr faster --language en   # proven config
 Diarization needs `HF_TOKEN` + one-time accept of three gated pyannote models
 (`segmentation-3.0`, `speaker-diarization-3.1`, `speaker-diarization-community-1`).
 
+## Updating the installed CLI
+A globally-installed `recall` (via `uv tool` / `pipx`) is a frozen copy — it does
+**not** pick up new commits automatically. After pushing changes, refresh it:
+```bash
+uv tool upgrade recall
+# or pin to a branch/ref:
+uv tool install --force "recall @ git+https://github.com/<owner>/<repo>.git@<branch>"
+```
+An **editable** install (`pip install -e .` into a venv) reflects edits/pulls live —
+no reinstall needed. Use editable for development, `uv tool`/`pipx` for daily use.
+
 ## How to extend (the designed path)
 - **New ASR backend / enhancer:** add a function to the `_REGISTRY` in `asr.py` /
   `enhance.py` and a `--asr` / `--enhance` choice in `cli.py`. Everything downstream

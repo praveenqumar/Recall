@@ -2,10 +2,10 @@
 
 > Canonical reference for **using**, **operating**, and **extending** Recall (the
 > `recall` package).
-> If you are an agent picking this repo up cold: read this file top-to-bottom, then
-> [`docs/reconciliation-and-merged-design.md`](reconciliation-and-merged-design.md)
-> (why the design is what it is). The README is the short user-facing version; this
-> is the deep one.
+> If you are an agent picking this repo up cold: read [`AGENTS.md`](../AGENTS.md)
+> first (the short working brief), then this file for depth. The design rationale
+> lives in §9 below. The README is the short user-facing version; this is the deep
+> one.
 
 ---
 
@@ -298,10 +298,9 @@ minimal; don't reformat unrelated code.
   failures are logged as `[recall] ... ` lines; ASR/enhancer/diarize failures fall
   back rather than crash, so **read the warnings**, not just the exit code.
 - Library API drift is the most common breakage (this stack moves fast). Three real
-  examples already fixed, all one-liners, all in
-  [`docs/`](reconciliation-and-merged-design.md) history:
-  psutil on macOS, pyannote `use_auth_token`→`token`, pyannote 4.x `DiarizeOutput`.
-  When a backend "fails", suspect a renamed kwarg or changed return shape first.
+  examples already fixed, all one-liners (see `git log`): psutil on macOS, pyannote
+  `use_auth_token`→`token`, pyannote 4.x `DiarizeOutput`. When a backend "fails",
+  suspect a renamed kwarg or changed return shape first.
 - The coverage diagnostic is a **correctness signal**: low coverage ⇒ audio
   dropped; high `repetition` / very low `mean_logprob` ⇒ ASR hallucination loop.
   Trust it when a transcript looks wrong.
@@ -335,7 +334,48 @@ diarization so it runs anywhere (only ffmpeg required).
 
 ---
 
-## 9. Known limitations / roadmap
+## 9. Design decisions (the contract)
+
+Recall is the merge of two earlier designs — a proven single-script pipeline
+(faster-whisper, `en`, ffmpeg/DeepFilterNet) and a richer unrun spec (mlx-whisper,
+diarization, identity, personas). These are the **locked** decisions (L) and the
+three genuinely **contested** axes (C) that were therefore made configurable. Don't
+silently overturn an L; the C axes are settled by evidence, not argument.
+
+**Locked (L):**
+- **L1** — adopt the full superstructure: diarization, voiceprint identity,
+  personas, tailored reports, the Claude→local notes engine, the persistent store.
+- **L2** — notes/personas/reports are Claude-primary with an automatic local-MLX
+  fallback; the **paid API is never required**.
+- **L3** — personas are evidence-backed observations + a hedged tone read, never
+  fixed trait scores; all speaker/persona data stays **local** (biometric;
+  BIPA/GDPR-sensitive).
+- **L4** — stages run **sequentially**; never hold Whisper and the local LLM
+  resident at once (18 GB unified-memory budget).
+- **L5** — the ASR backend, the enhancer, and the language are **configuration
+  behind clean interfaces** (`--asr` / `--enhance` / `--language`), not forks. This
+  is what lets the contested axes below be flags instead of rewrites.
+- **L6** — every run reports coverage **and** hallucination diagnostics
+  (repetition ratio + mean logprob), so a clean-looking transcript that silently
+  dropped or looped is caught.
+
+**Contested → made configurable (C):** decided per recording by **Claude-judged
+notes quality**, tie-broken by coverage then speed (run `scripts/ab_test.py`).
+- **C1** ASR backend — `faster` (proven, portable, VAD) vs `mlx` (Metal-fast, but
+  weaker on `hi`). Default `auto` (mlx then faster).
+- **C2** enhancer — `none` / `ffmpeg` / `deepfilternet` / `demucs`. **File-dependent**
+  (DeepFilterNet helped some files, looped on others), so it stays a flag.
+- **C3** language — `en` (Roman, easiest to summarize today) vs `hi` (native
+  Devanagari, Claude translates once at the end). Default `hi`, but `en` is the
+  proven config.
+
+> Whisper settings baked into the `faster` backend (from the proven pipeline):
+> `beam_size=5`, `condition_on_previous_text=False` (curbs loops), `vad_filter=True`
+> with a low `0.2` threshold (keeps soft speech), `hallucination_silence_threshold=2`.
+
+---
+
+## 10. Known limitations / roadmap
 - mlx + `--language hi` can produce runaway hallucination loops on some files; the
   proven config is `--asr faster --language en`. The repetition/logprob warnings
   (L6) now flag this automatically.

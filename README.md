@@ -18,13 +18,14 @@ audio ─► ingest ─► [enhance] ─► ASR ─► [diarize+identify] ─►
 ```
 
 The two historically contested choices are now **configuration, not forks** — the
-ASR backend (`--asr`) and the enhancer (`--enhance`) are pluggable, so the A/B
-winners drop in as defaults. See `docs/reconciliation-and-merged-design.md` for the
-decisions and `docs/ab-runbook.md` for how to settle them on your own audio.
+ASR backend (`--asr`) and the enhancer (`--enhance`) are pluggable, so the per-file
+winners drop in as defaults (the design decisions are in ARCHITECTURE §9; the A/B
+harness is `scripts/ab_test.py`).
 
 > **Full reference:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — pipeline
 > diagram, ML models, install + hardware requirements, every CLI flag, the package
-> API, and an agent/developer guide for extending and debugging the code.
+> API, design decisions, and an agent/developer guide. Contributing agents: start
+> with [`AGENTS.md`](AGENTS.md).
 
 ## Install
 
@@ -67,7 +68,7 @@ python -m recall ~/VoiceMemos/standup.m4a
 # pick the portable backend (works off Apple Silicon)
 python -m recall meeting.m4a --asr faster
 
-# try an enhancer (A/B it first — see docs/ab-runbook.md)
+# try an enhancer (A/B it first — see scripts/ab_test.py)
 python -m recall meeting.m4a --enhance ffmpeg
 
 # fully offline notes / transcript only / no speaker labels
@@ -132,6 +133,7 @@ pytest tests/
 - `src/recall/` — the package (this README)
 - `scripts/ab_test.py` — A/B harness for the contested axes (run on the Mac)
 - `scripts/transcribe_audio.py` — original standalone faster-whisper script (legacy)
-- `docs/` — design, reconciliation, A/B runbook
+- `AGENTS.md` — working brief for contributing agents
+- `docs/ARCHITECTURE.md` — the deep reference (architecture, models, CLI, API, decisions)
 - `meetings/` — per-meeting outputs
 ```

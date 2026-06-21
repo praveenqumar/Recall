@@ -2,7 +2,7 @@
 """
 ab_test.py — settle the three contested pipeline choices on YOUR audio.
 
-Sweeps the contested axes from docs/reconciliation-and-merged-design.md:
+Sweeps the contested axes (C1-C3; see docs/ARCHITECTURE.md §9):
 
     enhancer  : none | ffmpeg | deepfilternet        (C2)
     asr       : faster | mlx                          (C1)

@@ -33,12 +33,14 @@ def run(cfg) -> None:
     store_db = data_dir.parent / "recall.db"
     sha = audio_sha256(audio_in)
     existing = store.lookup(store_db, sha)
-    if existing and not cfg.force:
+    if existing and not cfg.force and Path(existing["transcript_md"]).exists():
         print("\n✅ Already generated for this audio (use --force to regenerate):")
         print(f"  Transcript: {existing['transcript_md']}")
-        if existing.get("notes_md"):
+        if existing.get("notes_md") and Path(existing["notes_md"]).exists():
             print(f"  Notes: {existing['notes_md']}")
         return
+    if existing and not cfg.force:
+        log("store: recorded output missing on disk; regenerating")
 
     file_stem = store.dated_stem(audio_in, cfg.title,
                                  date.today().strftime("%d-%m-%Y"))

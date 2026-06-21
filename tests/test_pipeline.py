@@ -142,6 +142,29 @@ def test_second_run_dedups(tmp_path, monkeypatch):
     assert calls["n"] == 2
 
 
+def test_regenerates_when_output_deleted(tmp_path, monkeypatch):
+    audio = tmp_path / "demo.wav"
+    _make_wav(audio)
+    out = tmp_path / "out"
+    data = tmp_path / "data"
+    calls = {"n": 0}
+
+    def fake_asr(*a, **k):
+        calls["n"] += 1
+        return [Segment(0.0, 1.0, "hello")]
+
+    monkeypatch.setattr(asr, "transcribe", fake_asr)
+    args = [str(audio), "-o", str(out), "--data-dir", str(data),
+            "--asr", "faster", "--enhance", "none", "--no-diarize",
+            "--notes-engine", "none", "--no-progress"]
+    run(build_parser().parse_args(args))
+    assert calls["n"] == 1
+    for f in out.glob("*demo.transcript.*"):     # delete the recorded outputs
+        f.unlink()
+    run(build_parser().parse_args(args))          # stale row → regenerate, not skip
+    assert calls["n"] == 2
+
+
 def test_pipeline_with_mocked_diarization(tmp_path, monkeypatch):
     audio = tmp_path / "demo2.wav"
     _make_wav(audio)

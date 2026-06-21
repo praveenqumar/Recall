@@ -102,9 +102,13 @@ def _faster(wav: Path, language: Optional[str], chunk_s: float, model: str,
     seg_iter, _info = m.transcribe(
         str(wav), language=language, task="transcribe", beam_size=5,
         condition_on_previous_text=False, vad_filter=True,
-        vad_parameters={"threshold": 0.2, "min_speech_duration_ms": 100,
-                        "min_silence_duration_ms": 500, "speech_pad_ms": 400},
+        # anti-hallucination VAD: stricter speech gate + cap segment length so a
+        # runaway decode can't grow into a 500-word loop; split on natural pauses.
+        vad_parameters={"threshold": 0.45, "min_speech_duration_ms": 250,
+                        "min_silence_duration_ms": 2000, "max_speech_duration_s": 15,
+                        "speech_pad_ms": 400},
         hallucination_silence_threshold=2,
+        compression_ratio_threshold=2.2,   # reject high-compression (repetitive) text
     )
     try:
         from tqdm import tqdm

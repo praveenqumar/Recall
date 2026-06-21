@@ -60,6 +60,26 @@ def test_build_transcript_with_speakers_and_coverage():
     assert payload["coverage"]["coverage"] == cov["coverage"]
 
 
+def test_claude_token_accounting(monkeypatch):
+    from recall import generate as gen
+    from recall.metrics import Metrics
+    payload = {"is_error": False, "result": "NOTES TEXT",
+               "usage": {"input_tokens": 10, "cache_read_input_tokens": 90,
+                         "cache_creation_input_tokens": 0, "output_tokens": 5},
+               "total_cost_usd": 0.01}
+
+    class R:
+        returncode, stdout, stderr = 0, json.dumps(payload), ""
+
+    monkeypatch.setattr(gen, "have", lambda c: True)
+    monkeypatch.setattr(gen.subprocess, "run", lambda *a, **k: R())
+    gen.TOKENS.update(input=0, output=0, cost=0.0)
+    out = gen._engine_claude("instr", "content", "notes", Metrics(), False)
+    assert out == "NOTES TEXT"
+    assert gen.TOKENS["input"] == 100 and gen.TOKENS["output"] == 5
+    assert "100 in + 5 out" in gen.token_summary()
+
+
 def test_pipeline_end_to_end(tmp_path, monkeypatch):
     audio = tmp_path / "demo.wav"
     _make_wav(audio)

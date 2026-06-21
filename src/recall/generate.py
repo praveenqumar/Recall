@@ -11,6 +11,7 @@ silently falls back to local when it isn't.
 """
 from __future__ import annotations
 
+import json
 import subprocess
 from typing import Callable, Optional
 
@@ -20,6 +21,17 @@ from .metrics import LiveStatus, Metrics
 # the local model is loaded once and cached across calls (notes + N personas)
 _LOCAL_LM: dict = {}
 
+# running Claude token total across this run's notes/personas/reports
+TOKENS = {"input": 0, "output": 0, "cost": 0.0}
+
+
+def token_summary() -> Optional[str]:
+    if not (TOKENS["input"] or TOKENS["output"]):
+        return None
+    cost = f", ${TOKENS['cost']:.4f}" if TOKENS["cost"] else ""
+    return (f"Claude tokens: {TOKENS['input']:,} in + "
+            f"{TOKENS['output']:,} out{cost}")
+
 
 def _engine_claude(instructions: str, content: str, label: str,
                    metrics: Metrics, progress: bool) -> Optional[str]:
@@ -27,8 +39,9 @@ def _engine_claude(instructions: str, content: str, label: str,
         return None
     with LiveStatus(f"{label} (claude -p)", metrics, progress):
         try:
-            r = subprocess.run(["claude", "-p", instructions], input=content,
-                               capture_output=True, text=True, timeout=600)
+            r = subprocess.run(
+                ["claude", "-p", instructions, "--output-format", "json"],
+                input=content, capture_output=True, text=True, timeout=600)
         except subprocess.TimeoutExpired:
             log(f"{label}: claude timed out")
             return None
@@ -37,7 +50,23 @@ def _engine_claude(instructions: str, content: str, label: str,
         if r.stderr.strip():
             log(r.stderr.strip()[:400])
         return None
-    return r.stdout.strip()
+    try:
+        d = json.loads(r.stdout)
+    except json.JSONDecodeError:
+        return r.stdout.strip()  # back-compat if --output-format ignored
+    if d.get("is_error") or not (d.get("result") or "").strip():
+        log(f"{label}: claude returned an error; trying local")
+        log((d.get("result") or "")[:400])
+        return None
+    u = d.get("usage", {})
+    inp = (u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0)
+           + u.get("cache_creation_input_tokens", 0))
+    out = u.get("output_tokens", 0)
+    TOKENS["input"] += inp
+    TOKENS["output"] += out
+    TOKENS["cost"] += d.get("total_cost_usd") or 0.0
+    log(f"{label}: {inp:,} in + {out:,} out tokens")
+    return d["result"].strip()
 
 
 def _engine_local(instructions: str, content: str, model: str, label: str,

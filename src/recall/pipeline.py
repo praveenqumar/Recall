@@ -16,7 +16,7 @@ from pathlib import Path
 from . import asr, diarize as diar, enhance as enh, identity, notes as notes_mod
 from . import personas as personas_mod, transcript as tx
 from .common import die, fmt_ts, ingest, log, wav_duration
-from .generate import make_generator
+from .generate import make_generator, token_summary
 from .metrics import Metrics, stage
 
 
@@ -110,6 +110,9 @@ def run(cfg) -> None:
         print(f"  {label}: {path}")
     if identified:
         print(f"  Known speakers this meeting: {', '.join(identified)}")
+    tok = token_summary()
+    if tok:
+        print(f"  {tok}")
     if not notes_path and cfg.notes_engine != "none":
         log("notes engine produced nothing; pipe manually:  "
             f"cat '{md_path}' | claude -p \"$(cat '{cfg.notes_prompt}')\"")

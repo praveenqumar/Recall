@@ -5,6 +5,28 @@ Read this first. It's the short brief for getting productive fast. For depth
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). The code's per-module docstrings
 are the source of truth.
 
+## Current state & open work (read before resuming)
+- **Branch:** all work is on `init-recall` (origin `praveenqumar/Recall`), **not
+  merged to `main`** — `main` holds only the seed README. PR/merge when ready.
+- **Status:** src-layout, pip-installable (src kept *because* it's installable),
+  tests green. Token-usage display shipped (issue #2, closed).
+- **Open feature — [issue #3](https://github.com/praveenqumar/Recall/issues/3):**
+  dedup runs by audio sha256 + a SQLite index under
+  `~/.recall/`, so re-running the same audio returns the existing notes/transcript
+  instead of regenerating. Decide first: where the `<title>` in the output filename
+  comes from (`--title` flag vs filename slug). Full breakdown in the issue.
+- **ASR reality (this decides C1 per file):** `faster` (CPU) is most reliable;
+  `mlx` (GPU) is faster but can hallucinate junk in silent gaps (e.g. `唐唐` / `drift`
+  loops) even with `--language en`. **The deciding metric is notes quality, not
+  transcript prettiness** — mlx notes can still win because Claude repairs the gaps.
+  `--enhance ffmpeg` cuts that gap-hallucination.
+- **Known L6 gap:** the repetition warning catches one dominant repeated phrase but
+  NOT multi-phrase / CJK-burst hallucination (the `唐唐` case slipped through at
+  "101% coverage"). Candidate fix if it bites.
+- **Env (this machine):** `HF_TOKEN` in `~/.zshrc`; the 3 gated pyannote models
+  already accepted; HF weights cached in `~/.cache/huggingface` (~8 GB, shared).
+  Recall has its own `.venv-transcribe`; run tests from the repo root.
+
 ## What Recall is
 An offline, on-device CLI that turns Hinglish (Hindi+English) meeting audio into a
 speaker-labelled transcript + English notes, **remembers speakers across meetings**

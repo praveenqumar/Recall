@@ -106,7 +106,7 @@ swap any of them and the rest of the pipeline is untouched.
 | Speaker embedding | `speaker-diarization-community-1` | (inside pyannote 4.x) | The ~256-d voiceprint vector that feeds the identity layer | bridge into `identity.py` |
 | Notes / personas / reports | Claude (via `claude -p`) | Claude Code headless | Translate Hinglish + write notes/personas/reports in one shot; repairs ASR garbles | **primary**, uses Max subscription, no API billing |
 | Notes / personas / reports (offline) | `mlx-community/Qwen2.5-7B-Instruct-4bit` | mlx-lm (Metal) | Local fallback when Claude absent → fully offline | `--notes-engine local`; ~4.5 GB, ~250 s for notes |
-| Enhance (optional) | DeepFilterNet | `deepFilter` CLI | AI speech denoise/enhance | `--enhance deepfilternet`; can hurt some files — A/B it |
+| Enhance (optional) | DeepFilterNet | `deepFilter` CLI | AI speech denoise/enhance | `--enhance deepfilternet`; can hurt some files — A/B it. Not in `[all]`: native lib compiles via **Rust/cargo** (no wheel) — `brew install rust` then `recall[deepfilternet]` |
 | Enhance (optional) | Demucs | `demucs` CLI | Vocal isolation from noisy background | `--enhance demucs` |
 
 **Why no local Hindi→English translation step (D1):** a small local translator

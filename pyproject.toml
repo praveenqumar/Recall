@@ -24,7 +24,7 @@ mlx = ["mlx-whisper", "mlx-lm"]              # Apple-Silicon ASR + offline notes
 faster = ["faster-whisper", "soundfile"]     # portable CPU ASR
 diarize = ["pyannote.audio"]                 # speaker labels + voiceprints
 demucs = ["demucs"]                          # --enhance demucs (pure-python wheel)
-deepfilternet = ["deepfilternet"]            # --enhance deepfilternet — NEEDS Rust/cargo to build
+deepfilternet = ["deepfilternet"]            # --enhance deepfilternet — native lib compiles via Rust/cargo (no wheel); `brew install rust` first
 romanize = ["indic-transliteration"]         # Devanagari -> Roman
 # `all` stays pip-installable everywhere: it excludes deepfilternet (its native
 # lib needs a Rust toolchain). Add it explicitly with `recall[deepfilternet]` if

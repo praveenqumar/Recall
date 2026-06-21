@@ -40,10 +40,11 @@ class Metrics:
     def _mlx_active_gb(self) -> Optional[float]:
         if not self.mx:
             return None
-        # API location shifted across MLX versions; try both.
+        # API location shifted across MLX versions; prefer the current top-level
+        # mx.get_active_memory, fall back to the deprecated mx.metal.* on old MLX.
         candidates = [
-            (getattr(self.mx, "metal", None), "get_active_memory"),
             (self.mx, "get_active_memory"),
+            (getattr(self.mx, "metal", None), "get_active_memory"),
         ]
         for mod, attr in candidates:
             if mod is not None and hasattr(mod, attr):

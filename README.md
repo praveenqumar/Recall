@@ -39,6 +39,20 @@ Diarization (optional, one-time): make a free huggingface.co account, accept the
 conditions on `pyannote/segmentation-3.0` and `pyannote/speaker-diarization-3.1`,
 create a token, and `export HF_TOKEN=hf_xxx`.
 
+## Editor / LSP setup
+
+For full code intelligence (go-to-def, references, type checks) install the
+package editable so the language server resolves `recall` and its backends:
+
+```bash
+VIRTUAL_ENV=.venv-transcribe uv pip install -e '.[all]'   # or .[mlx,faster,diarize]
+```
+
+`pyrightconfig.json` points the language server at `.venv-transcribe` and treats
+the optional ML backends (mlx/faster/pyannote/torch) as warnings — they are
+lazy-imported, so a partial install still type-checks cleanly. VS Code picks up
+`.vscode/settings.json` automatically.
+
 ## Usage
 
 ```bash

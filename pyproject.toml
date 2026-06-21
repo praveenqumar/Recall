@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recall"
+version = "0.1.0"
+description = "Offline, on-device Hinglish meeting transcription + AI notes, speaker identity, and personas."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+# Core stays tiny: the pure-Python slices (identity, personas, transcript,
+# coverage) need only stdlib; tqdm/psutil power the progress readout. Install the
+# heavy ASR/diarization/enhancer backends you actually want via the extras below —
+# this mirrors the "pluggable backend" design (guardrail L5).
+dependencies = [
+    "tqdm",
+    "psutil",
+]
+
+[project.optional-dependencies]
+mlx = ["mlx-whisper", "mlx-lm"]              # Apple-Silicon ASR + offline notes
+faster = ["faster-whisper", "soundfile"]     # portable CPU ASR
+diarize = ["pyannote.audio"]                 # speaker labels + voiceprints
+enhance = ["deepfilternet", "demucs"]        # optional audio enhancers
+romanize = ["indic-transliteration"]         # Devanagari -> Roman
+all = [
+    "mlx-whisper", "mlx-lm", "faster-whisper", "soundfile",
+    "pyannote.audio", "deepfilternet", "demucs", "indic-transliteration",
+]
+
+[project.scripts]
+recall = "recall.cli:main"
+
+[tool.setuptools]
+packages = ["recall"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+recall = ["prompts/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

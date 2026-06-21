@@ -1,0 +1,24 @@
+{
+  "venvPath": ".",
+  "venv": ".venv-transcribe",
+  "include": ["recall", "scripts", "tests"],
+  "exclude": [
+    "**/__pycache__",
+    ".venv-transcribe",
+    ".venv",
+    "recall-data",
+    "recall-out",
+    "recall-out-*",
+    "scribe-out*",
+    "meetings",
+    "logs",
+    "ab-out"
+  ],
+  "typeCheckingMode": "basic",
+  "pythonVersion": "3.11",
+
+  "//": "The ML backends (mlx_whisper, mlx_lm, faster_whisper, pyannote, torch, indic_transliteration) are OPTIONAL and lazy-imported inside functions; they may be absent in a given install. Downgrade missing-import noise so real type errors stay visible.",
+  "reportMissingImports": "warning",
+  "reportMissingModuleSource": "none",
+  "reportAttributeAccessIssue": "warning"
+}

@@ -1,0 +1,12 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv-transcribe/bin/python",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.extraPaths": ["${workspaceFolder}"],
+  "python.analysis.autoImportCompletions": true,
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests"],
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  }
+}

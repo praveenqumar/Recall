@@ -40,3 +40,9 @@ logs/
 # Claude Code machine-local state (permission allowlist embeds local paths/filenames)
 .claude/settings.local.json
 .claude/settings.json
+
+# Python build / editable-install artifacts
+*.egg-info/
+build/
+dist/
+.pytest_cache/

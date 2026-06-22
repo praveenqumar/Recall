@@ -30,7 +30,7 @@ import numpy as np
 from recall.asr import transcribe
 from recall.common import fmt_ts, ingest, log, wav_duration
 from recall.metrics import Metrics
-from recall.transcript import coverage
+from recall.transcript import build_transcript, coverage
 
 SR = 16000
 
@@ -94,6 +94,12 @@ def main() -> int:
                           progress=True, work=work)
         cov = coverage(segs, duration)
 
+    # always persist the transcript so quality can be eyeballed, not just scored.
+    md, payload = build_transcript(segs, audio_in.stem, cov)
+    md_path = audio_in.with_suffix(".transcript.md")
+    md_path.write_text(md)
+    audio_in.with_suffix(".transcript.json").write_text(json.dumps(payload, indent=2))
+
     asr_speech = cov["speech_s"]
     dropped = max(0.0, vad_voiced - asr_speech)
     n_words = sum(len(s.text.split()) for s in segs)
@@ -136,7 +142,8 @@ def main() -> int:
     if report["top_holes"]:
         log(f"biggest hole           : {report['top_holes'][0][1]:.0f}s at "
             f"{report['top_holes'][0][0]}")
-    log(f"report -> {out}")
+    log(f"report     -> {out}")
+    log(f"transcript -> {md_path}")
     return 0
 
 

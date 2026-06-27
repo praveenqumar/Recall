@@ -54,6 +54,25 @@ Whisper and the local LLM at once).
 > Same model either way. Model weights auto-download from HuggingFace on first use
 > (cached in `~/.cache/huggingface`, ~8 GB).
 
+### What downloads from HuggingFace (and when)
+
+All weights auto-download on **first use** of the relevant feature and cache to
+`~/.cache/huggingface` (override with `HF_HOME`). Nothing is bundled; first run of
+each stage is slower while it fetches.
+
+| repo | pulled by | when | size approx | gated? |
+|---|---|---|---|---|
+| `mlx-community/whisper-large-v3-mlx` | `--asr mlx` | first GPU transcribe | ~3 GB | no |
+| `Systran/faster-whisper-large-v3` | `--asr faster` | first CPU transcribe | ~3 GB | no |
+| `pyannote/speaker-diarization-3.1` | `--diarize` | first run with diarization | small | **yes** |
+| `pyannote/segmentation-3.0` | `--diarize` | "" | small | **yes** |
+| `pyannote/speaker-diarization-community-1` | `--diarize` | "" | small | **yes** |
+| `mlx-community/Qwen2.5-7B-Instruct-4bit` | offline notes (`--notes-engine local`, or Claude unavailable) | first local-notes run | ~4 GB | no |
+
+**Gated models** (the 3 `pyannote` repos) need a free HuggingFace account, accepting
+each repo's conditions, and `export HF_TOKEN=hf_xxx` — see [Diarization setup](#install-uv--recommended)
+below. Skip them entirely with `--no-diarize`. Total cache once everything is pulled: ~8–10 GB.
+
 ---
 
 ## Install (uv — recommended)

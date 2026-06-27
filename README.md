@@ -54,18 +54,47 @@ Whisper and the local LLM at once).
 > Same model either way. Model weights auto-download from HuggingFace on first use
 > (cached in `~/.cache/huggingface`, ~8 GB).
 
+### What downloads from HuggingFace (and when)
+
+All weights auto-download on **first use** of the relevant feature and cache to
+`~/.cache/huggingface` (override with `HF_HOME`). Nothing is bundled; first run of
+each stage is slower while it fetches.
+
+| repo | pulled by | when | size approx | gated? |
+|---|---|---|---|---|
+| `mlx-community/whisper-large-v3-mlx` | `--asr mlx` | first GPU transcribe | ~3 GB | no |
+| `Systran/faster-whisper-large-v3` | `--asr faster` | first CPU transcribe | ~3 GB | no |
+| `pyannote/speaker-diarization-3.1` | `--diarize` | first run with diarization | small | **yes** |
+| `pyannote/segmentation-3.0` | `--diarize` | "" | small | **yes** |
+| `pyannote/speaker-diarization-community-1` | `--diarize` | "" | small | **yes** |
+| `mlx-community/Qwen2.5-7B-Instruct-4bit` | offline notes (`--notes-engine local`, or Claude unavailable) | first local-notes run | ~4 GB | no |
+
+**Gated models** (the 3 `pyannote` repos) need a free HuggingFace account, accepting
+each repo's conditions, and `export HF_TOKEN=hf_xxx` — see [Diarization setup](#install-uv--recommended)
+below. Skip them entirely with `--no-diarize`. Total cache once everything is pulled: ~8–10 GB.
+
 ---
 
 ## Install (uv — recommended)
 
+**Requirements:** macOS (Apple Silicon for `mlx` GPU ASR), Python ≥ 3.10.
+
 ```bash
-# system tools
+# 1. install uv (the installer/runner) — skip if you already have it
+curl -LsSf https://astral.sh/uv/install.sh | sh    # then restart your shell
+
+# 2. system tools
 brew install ffmpeg
 npm install -g @anthropic-ai/claude-code      # for notes; run `claude` once to log in
 
-# install Recall as a global command (Apple Silicon)
+# 3. install Recall as a global command (Apple Silicon)
 uv tool install "recall[mlx,faster,diarize] @ git+https://github.com/praveenqumar/Recall.git"
 ```
+
+> This installs the **Python libraries only** (~hundreds MB). The ML model weights
+> (whisper, pyannote, Qwen — ~8–10 GB total) are **not** downloaded here; they fetch
+> lazily on first use of each feature — see
+> [What downloads from HuggingFace](#what-downloads-from-huggingface-and-when).
 
 Now `recall` works from any folder. Verify the build:
 ```bash
@@ -111,6 +140,22 @@ cat ~/.recall/*_meeting.notes.md        # read the notes
 ```
 Defaults are sensible: **Apple GPU ASR**, **English output**, **ffmpeg cleanup**,
 speaker labels on, Claude notes. Outputs land in `~/.recall/`.
+
+### Where outputs go
+
+Everything lands under `~/.recall/` (change with `-o, --output-dir`):
+
+| path | what |
+|---|---|
+| `~/.recall/<DD-MM-YYYY_HHMMSS>_<title>_<file>.transcript.md` / `.json` | transcript (+ coverage diagnostics) |
+| `~/.recall/<…>.notes.md` | Claude/local meeting notes |
+| `~/.recall/<…>.report.<name>.md` | per-person tailored report (`--report-for NAME`) |
+| `~/.recall/data/voiceprints.json` | speaker voiceprints (biometric, git-ignored) |
+| `~/.recall/data/people/<slug>/` | per-person `profile.md` + `utterances.jsonl` |
+| `~/.recall/recall.db` | SQLite dedup index (audio content-hash → outputs) |
+
+Re-running the same audio reuses cached outputs; pass `--force` to regenerate (see
+[dedup](#dedup)).
 
 ---
 
@@ -179,6 +224,7 @@ mlx transcript comes out looping/garbled on a rough recording, switch to
 
 ---
 
+<a id="dedup"></a>
 ## Re-running the same audio (dedup) & `--force`
 
 Every run is keyed by the **audio's content hash** in a small SQLite index

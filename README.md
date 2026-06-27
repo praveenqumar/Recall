@@ -221,6 +221,9 @@ mlx transcript comes out looping/garbled on a rough recording, switch to
 | `--no-personas` | personas on | skip building/updating per-person profiles |
 | `--romanize` | off | transliterate Devanagari → Roman (ITRANS) |
 | `--keep-repeats` | off | keep Whisper's looped/repeated text (default: collapse it to save tokens) |
+| `--notes-prompt PATH` | bundled `notes.md` | override the notes instruction prompt file |
+| `--persona-prompt PATH` | bundled `persona.md` | override the persona-update instruction prompt file |
+| `--report-prompt PATH` | bundled `report.md` | override the tailored-report instruction prompt file |
 
 ---
 

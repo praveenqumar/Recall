@@ -91,6 +91,11 @@ npm install -g @anthropic-ai/claude-code      # for notes; run `claude` once to 
 uv tool install "recall[mlx,faster,diarize] @ git+https://github.com/praveenqumar/Recall.git"
 ```
 
+> This installs the **Python libraries only** (~hundreds MB). The ML model weights
+> (whisper, pyannote, Qwen — ~8–10 GB total) are **not** downloaded here; they fetch
+> lazily on first use of each feature — see
+> [What downloads from HuggingFace](#what-downloads-from-huggingface-and-when).
+
 Now `recall` works from any folder. Verify the build:
 ```bash
 recall --version          # e.g. recall 0.1.1.dev42+g395a63d

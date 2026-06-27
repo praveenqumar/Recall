@@ -155,7 +155,7 @@ Everything lands under `~/.recall/` (change with `-o, --output-dir`):
 | `~/.recall/recall.db` | SQLite dedup index (audio content-hash → outputs) |
 
 Re-running the same audio reuses cached outputs; pass `--force` to regenerate (see
-[dedup](#re-running-the-same-audio-dedup--force)).
+[dedup](#dedup)).
 
 ---
 
@@ -224,6 +224,7 @@ mlx transcript comes out looping/garbled on a rough recording, switch to
 
 ---
 
+<a id="dedup"></a>
 ## Re-running the same audio (dedup) & `--force`
 
 Every run is keyed by the **audio's content hash** in a small SQLite index

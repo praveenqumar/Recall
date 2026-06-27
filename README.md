@@ -136,6 +136,22 @@ cat ~/.recall/*_meeting.notes.md        # read the notes
 Defaults are sensible: **Apple GPU ASR**, **English output**, **ffmpeg cleanup**,
 speaker labels on, Claude notes. Outputs land in `~/.recall/`.
 
+### Where outputs go
+
+Everything lands under `~/.recall/` (change with `-o, --output-dir`):
+
+| path | what |
+|---|---|
+| `~/.recall/<DD-MM-YYYY_HHMMSS>_<title>_<file>.transcript.md` / `.json` | transcript (+ coverage diagnostics) |
+| `~/.recall/<…>.notes.md` | Claude/local meeting notes |
+| `~/.recall/<…>.report.<name>.md` | per-person tailored report (`--report-for NAME`) |
+| `~/.recall/data/voiceprints.json` | speaker voiceprints (biometric, git-ignored) |
+| `~/.recall/data/people/<slug>/` | per-person `profile.md` + `utterances.jsonl` |
+| `~/.recall/recall.db` | SQLite dedup index (audio content-hash → outputs) |
+
+Re-running the same audio reuses cached outputs; pass `--force` to regenerate (see
+[dedup](#re-running-the-same-audio-dedup--force)).
+
 ---
 
 ## Speed vs reliability — `--asr mlx` vs `--asr faster`

@@ -58,12 +58,17 @@ Whisper and the local LLM at once).
 
 ## Install (uv — recommended)
 
+**Requirements:** macOS (Apple Silicon for `mlx` GPU ASR), Python ≥ 3.10.
+
 ```bash
-# system tools
+# 1. install uv (the installer/runner) — skip if you already have it
+curl -LsSf https://astral.sh/uv/install.sh | sh    # then restart your shell
+
+# 2. system tools
 brew install ffmpeg
 npm install -g @anthropic-ai/claude-code      # for notes; run `claude` once to log in
 
-# install Recall as a global command (Apple Silicon)
+# 3. install Recall as a global command (Apple Silicon)
 uv tool install "recall[mlx,faster,diarize] @ git+https://github.com/praveenqumar/Recall.git"
 ```
 
